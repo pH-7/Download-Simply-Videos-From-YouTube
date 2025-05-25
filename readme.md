@@ -45,37 +45,150 @@ This python script not only downloads YouTube content in the highest available q
 
 ## 🪄 Usage
 
+### Basic Usage
+
 To run the script, use the following command:
 
 ```console
 python download.py
 ```
 
+### Single Video Download
+Enter a single YouTube URL when prompted:
+```
+Enter YouTube URL(s): https://www.youtube.com/watch?v=Hhb8ghB8lMg
+```
+
+### Multiple Videos Download 🆕
+You can download multiple videos simultaneously by entering URLs in various formats. The script intelligently parses different input methods:
+
+#### **Method 1: Comma-Separated URLs**
+```
+Enter YouTube URL(s): https://www.youtube.com/watch?v=Hhb8ghB8lMg, https://www.youtube.com/watch?v=RiCUh_V7Tjg, https://www.youtube.com/watch?v=HcioaU54p08
+```
+
+#### **Method 2: Space-Separated URLs**
+```
+Enter YouTube URL(s): https://www.youtube.com/watch?v=Hhb8ghB8lMg https://www.youtube.com/watch?v=RiCUh_V7Tjg https://www.youtube.com/watch?v=HcioaU54p08
+```
+
+#### **Method 3: Mixed Format**
+You can combine commas and spaces in any way:
+```
+Enter YouTube URL(s): https://www.youtube.com/watch?v=Hhb8ghB8lMg, https://www.youtube.com/watch?v=RiCUh_V7Tjg https://www.youtube.com/watch?v=HcioaU54p08, https://www.youtube.com/watch?v=ghi789
+```
+
+#### **Method 4: Multi-Line Input**
+For easier management of many URLs, press **Enter** without typing anything when prompted, then enter one URL per line:
+
+```
+Enter YouTube URL(s): [Press Enter here]
+📝 Multi-line mode activated!
+💡 Enter one URL per line, press Enter twice when finished:
+   URL 1: https://www.youtube.com/watch?v=Hhb8ghB8lMg
+   URL 2: https://www.youtube.com/watch?v=RiCUh_V7Tjg
+   URL 3: https://www.youtube.com/watch?v=HcioaU54p08
+   URL 4: [Press Enter here to finish]
+```
+
+#### **Benefits of Multi-Video Download:**
+- ⚡ **Concurrent processing**: Downloads happen simultaneously (configurable 1-5 workers)
+- 🛡️ **Independent operations**: One failed download won't stop others
+- 📊 **Progress tracking**: See individual download status and final summary
+- 🎯 **Smart validation**: Invalid URLs are automatically skipped with warnings
+
+### Advanced Options
+
+#### List Available Formats
+To see what video formats are available for a specific video:
+```console
+python download.py --list-formats
+```
+
+#### Concurrent Downloads
+The script supports 1-5 concurrent downloads (default: 3). You'll be prompted to choose:
+```
+Number of concurrent downloads (1-5, default=3): 5
+```
+
 **The script will:**
-1. Prompt for the YouTube URL (video or playlist)
+1. Prompt for YouTube URL(s) (single video, playlist, or multiple URLs)
 2. Ask for an output directory (optional)
-3. Download content in the highest available quality
-4. Save thumbnails and subtitles
+3. Ask for number of concurrent downloads (optional)
+4. Download content simultaneously in the highest available quality
 5. Organize content appropriately:
    - Single videos: Saved directly in the output directory
    - Playlists: Organized in a playlist-named folder with numbered files
+   - Multiple videos: All saved to the same output directory
+6. Provide a detailed summary of successful and failed downloads
 
 **Features:**
-- ✨ Support for both single videos and playlists
-- 🎥 High-quality video and audio downloads
+- ✨ Support for single videos, playlists, and **multiple URLs simultaneously**
+- 🎥 High-quality video and audio downloads (up to 1080p)
 - 📁 Organized folder structure
-- 📑 Automatic subtitle downloading
-- 🖼️ Thumbnail extraction
+- ⚡ **Concurrent downloading** for faster batch operations
 - 🔄 Format conversion to MP4
-- ⚡ Error handling and recovery
+- 🛡️ Error handling and recovery with detailed reporting
+- 📊 Download progress tracking and summary reports
+- 🎯 Smart URL parsing and validation
+
+### Usage Examples
+
+**Download single video:**
+```bash
+python download.py
+# Enter: https://www.youtube.com/watch?v=Hhb8ghB8lMg
+```
+
+**Download multiple videos (comma-separated):**
+```bash
+python download.py
+# Enter: https://www.youtube.com/watch?v=Hhb8ghB8lMg, https://www.youtube.com/watch?v=RiCUh_V7Tjg
+```
+
+**Download multiple videos (space-separated):**
+```bash
+python download.py
+# Enter: https://www.youtube.com/watch?v=Hhb8ghB8lMg https://www.youtube.com/watch?v=RiCUh_V7Tjg
+```
+
+**Download multiple videos (mixed format):**
+```bash
+python download.py
+# Enter: url1, url2 url3, url4 url5
+```
+
+**Download multiple videos (multi-line):**
+```bash
+python download.py
+# Press Enter when prompted, then:
+# URL 1: https://www.youtube.com/watch?v=Hhb8ghB8lMg
+# URL 2: https://www.youtube.com/watch?v=RiCUh_V7Tjg
+# URL 3: [Press Enter to finish]
+```
+
+**Download with custom settings:**
+```bash
+python download.py
+# Enter multiple URLs using any method above
+# Choose output directory: /Users/john/Videos
+# Choose concurrent downloads: 5
+```
+
+**Debug format issues:**
+```bash
+python download.py --list-formats
+# Enter problematic URL to see available formats
+```
 
 ## 🛠️ Configuration
 
 You can modify the following in the script:
-- Video format preferences
-- Subtitle language selection
+- Video format preferences (currently limited to 1080p max)
+- Maximum concurrent downloads (1-5 workers)
 - Output directory structure
 - Post-processing options
+- Retry attempts for failed downloads
 
 ## 👨‍🍳 Who cooked this?
 
