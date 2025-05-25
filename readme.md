@@ -32,13 +32,13 @@ This python script not only downloads YouTube content in the highest available q
    ```
 
 3. Install FFmpeg:
-   - **Ubuntu/Debian:**
-     ```console
-     sudo apt-get install ffmpeg
-     ```
    - **macOS:**
      ```console
      brew install ffmpeg
+     ```
+   - **Ubuntu/Debian:**
+     ```console
+     sudo apt-get install ffmpeg
      ```
    - **Windows:**
       Download from the [FFmpeg website](https://ffmpeg.org/download.html), follow the instructions and add to PATH
