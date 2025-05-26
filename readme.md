@@ -59,6 +59,11 @@ Enter a single YouTube URL when prompted:
 Enter YouTube URL(s): https://www.youtube.com/watch?v=Hhb8ghB8lMg
 ```
 
+**For single videos, the script automatically optimizes the process by:**
+- ✨ Skipping the concurrent downloads prompt (not needed for single videos)
+- 🎯 Using streamlined single-threaded processing
+- 📁 Direct file placement in your chosen directory
+
 ### Multiple Videos Download 🆕
 You can download multiple videos simultaneously by entering URLs in various formats. The script intelligently parses different input methods:
 
@@ -96,6 +101,7 @@ Enter YouTube URL(s): [Press Enter here]
 - 🛡️ **Independent operations**: One failed download won't stop others
 - 📊 **Progress tracking**: See individual download status and final summary
 - 🎯 **Smart validation**: Invalid URLs are automatically skipped with warnings
+- 🧠 **Intelligent prompting**: Concurrent options only appear when downloading multiple videos
 
 ### Advanced Options
 
@@ -105,17 +111,19 @@ To see what video formats are available for a specific video:
 python download.py --list-formats
 ```
 
-#### Concurrent Downloads
-The script supports 1-5 concurrent downloads (default: 3). You'll be prompted to choose:
+#### Concurrent Downloads (Multiple Videos Only)
+When downloading multiple videos, the script will prompt you to choose concurrent workers (1-5, default: 3):
 ```
 Number of concurrent downloads (1-5, default=3): 5
 ```
 
+**Note:** This prompt only appears when downloading multiple videos. Single video downloads are automatically optimized for best performance.
+
 **The script will:**
 1. Prompt for YouTube URL(s) (single video, playlist, or multiple URLs)
 2. Ask for an output directory (optional)
-3. Ask for number of concurrent downloads (optional)
-4. Download content simultaneously in the highest available quality
+3. **Smart prompting**: Ask for concurrent downloads only when downloading multiple videos
+4. Download content simultaneously in the highest available quality (for multiple videos)
 5. Organize content appropriately:
    - Single videos: Saved directly in the output directory
    - Playlists: Organized in a playlist-named folder with numbered files
@@ -126,11 +134,12 @@ Number of concurrent downloads (1-5, default=3): 5
 - ✨ Support for single videos, playlists, and **multiple URLs simultaneously**
 - 🎥 High-quality video and audio downloads (up to 1080p)
 - 📁 Organized folder structure
-- ⚡ **Concurrent downloading** for faster batch operations
+- ⚡ **Smart concurrent downloading** for batch operations (only when needed)
 - 🔄 Format conversion to MP4
 - 🛡️ Error handling and recovery with detailed reporting
 - 📊 Download progress tracking and summary reports
 - 🎯 Smart URL parsing and validation
+- 🧠 **Intelligent UX**: Relevant prompts only when applicable
 
 ### Usage Examples
 
@@ -138,24 +147,28 @@ Number of concurrent downloads (1-5, default=3): 5
 ```bash
 python download.py
 # Enter: https://www.youtube.com/watch?v=Hhb8ghB8lMg
+# Note: No concurrent downloads prompt - automatically optimized!
 ```
 
 **Download multiple videos (comma-separated):**
 ```bash
 python download.py
 # Enter: https://www.youtube.com/watch?v=Hhb8ghB8lMg, https://www.youtube.com/watch?v=RiCUh_V7Tjg
+# Concurrent downloads prompt will appear
 ```
 
 **Download multiple videos (space-separated):**
 ```bash
 python download.py
 # Enter: https://www.youtube.com/watch?v=Hhb8ghB8lMg https://www.youtube.com/watch?v=RiCUh_V7Tjg
+# Concurrent downloads prompt will appear
 ```
 
 **Download multiple videos (mixed format):**
 ```bash
 python download.py
 # Enter: url1, url2 url3, url4 url5
+# Concurrent downloads prompt will appear
 ```
 
 **Download multiple videos (multi-line):**
@@ -165,14 +178,15 @@ python download.py
 # URL 1: https://www.youtube.com/watch?v=Hhb8ghB8lMg
 # URL 2: https://www.youtube.com/watch?v=RiCUh_V7Tjg
 # URL 3: [Press Enter to finish]
+# Concurrent downloads prompt will appear
 ```
 
-**Download with custom settings:**
+**Download with custom concurrent settings:**
 ```bash
 python download.py
 # Enter multiple URLs using any method above
 # Choose output directory: /Users/john/Videos
-# Choose concurrent downloads: 5
+# Choose concurrent downloads: 5 (only for multiple videos)
 ```
 
 **Debug format issues:**
@@ -185,7 +199,7 @@ python download.py --list-formats
 
 You can modify the following in the script:
 - Video format preferences (currently limited to 1080p max)
-- Maximum concurrent downloads (1-5 workers)
+- Maximum concurrent downloads (1-5 workers, automatically applied only for multiple videos)
 - Output directory structure
 - Post-processing options
 - Retry attempts for failed downloads

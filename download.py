@@ -261,18 +261,21 @@ if __name__ == "__main__":
         output_dir = input(
             "\nEnter output directory (press Enter for default): ").strip()
 
-        # Ask for concurrent workers (optional)
-        workers_input = input(
-            "Number of concurrent downloads (1-5, default=3): ").strip()
-        try:
-            max_workers = int(workers_input) if workers_input else 3
-            max_workers = max(1, min(5, max_workers))  # Clamp between 1-5
-        except ValueError:
-            max_workers = 3
+        # Only ask for concurrent workers if there are multiple URLs
+        max_workers = 1  # Default for single URL
+        if len(urls) > 1:
+            workers_input = input(
+                "Number of concurrent downloads (1-5, default=3): ").strip()
+            try:
+                max_workers = int(workers_input) if workers_input else 3
+                max_workers = max(1, min(5, max_workers))  # Clamp between 1-5
+            except ValueError:
+                max_workers = 3
 
         print(f"\n🎬 Starting downloads...")
         print(f"📊 URLs to download: {len(urls)}")
-        print(f"⚡ Concurrent workers: {max_workers}")
+        if len(urls) > 1:
+            print(f"⚡ Concurrent workers: {max_workers}")
         print(
             f"📁 Output: {output_dir if output_dir else 'default (./downloads)'}")
 
