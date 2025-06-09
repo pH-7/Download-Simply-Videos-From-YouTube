@@ -118,7 +118,7 @@ def get_available_formats(url: str) -> None:
         print(f"Error listing formats: {str(e)}")
 
 
-def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dict:
+def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False) -> dict:
     """
     Download a single YouTube video or playlist.
 
@@ -126,32 +126,46 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
         url (str): YouTube URL to download
         output_path (str): Directory to save the download
         thread_id (int): Thread identifier for logging
+        audio_only (bool): If True, download audio only in MP3 format
 
     Returns:
         dict: Result status with success/failure info
     """
-    format_selector = (
-        # Try best video+audio combination first
-        'bestvideo[height<=1080]+bestaudio/best[height<=1080]/'
-        # Fallback to best available quality
-        'best'
-    )
+    if audio_only:
+        # Configure for audio-only MP3 downloads
+        format_selector = 'bestaudio/best'
+        file_extension = 'mp3'
+        postprocessors = [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }]
+        print(f"🎵 [Thread {thread_id}] Audio-only mode: Downloading MP3...")
+    else:
+        # Configure for video downloads
+        format_selector = (
+            # Try best video+audio combination first
+            'bestvideo[height<=1080]+bestaudio/best[height<=1080]/'
+            # Fallback to best available quality
+            'best'
+        )
+        file_extension = 'mp4'
+        postprocessors = [{
+            'key': 'FFmpegVideoConvertor',
+            'preferedformat': 'mp4',
+        }]
 
-    # Configure yt-dlp options for MP4 only
+    # Configure yt-dlp options
     ydl_opts = {
         'format': format_selector,
-        'merge_output_format': 'mp4',
         'ignoreerrors': True,
         'no_warnings': False,
         'extract_flat': False,
-        # Disable all additional downloads for clean MP4-only output
+        # Disable additional downloads for clean output
         'writesubtitles': False,
         'writethumbnail': False,
         'writeautomaticsub': False,
-        'postprocessors': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
-        }],
+        'postprocessors': postprocessors,
         # Clean up options
         'keepvideo': False,
         'clean_infojson': True,
@@ -161,17 +175,30 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
         'noplaylist': False,  # Allow playlist downloads
     }
 
+    # Add merge format for video downloads only
+    if not audio_only:
+        ydl_opts['merge_output_format'] = 'mp4'
+
     # Set different output templates for playlists and single videos
     is_playlist, cached_info = get_url_info(url)
+
+    # Debug: Print detection result
+    if thread_id == 1:  # Only print for first thread to avoid spam
+        print(
+            f"🔍 [Debug] URL analysis: {'Playlist' if is_playlist else 'Single video'}")
+
     if is_playlist:
         ydl_opts['outtmpl'] = os.path.join(
-            output_path, '%(playlist_title)s', '%(playlist_index)s-%(title)s.%(ext)s')
+            output_path, '%(playlist_title)s', f'%(playlist_index)s-%(title)s.{file_extension}')
+        content_type = "playlist"
         print(
             f"🎵 [Thread {thread_id}] Detected playlist URL. Downloading entire playlist...")
     else:
-        ydl_opts['outtmpl'] = os.path.join(output_path, '%(title)s.%(ext)s')
+        ydl_opts['outtmpl'] = os.path.join(
+            output_path, f'%(title)s.{file_extension}')
+        content_type = "video"
         print(
-            f"🎥 [Thread {thread_id}] Detected single video URL. Downloading video...")
+            f"🎥 [Thread {thread_id}] Detected single video URL. Downloading {'audio' if audio_only else 'video'}...")
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
@@ -207,13 +234,13 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
                 return {
                     'url': url,
                     'success': True,
-                    'message': f"✅ [Thread {thread_id}] Playlist '{playlist_title}' download completed! ({video_count} videos)"
+                    'message': f"✅ [Thread {thread_id}] Playlist '{playlist_title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'})"
                 }
             else:
                 return {
                     'url': url,
                     'success': True,
-                    'message': f"✅ [Thread {thread_id}] Video download completed successfully!"
+                    'message': f"✅ [Thread {thread_id}] {'Audio' if audio_only else 'Video'} download completed successfully!"
                 }
 
     except Exception as e:
@@ -225,9 +252,9 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
 
 
 def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
-                             list_formats: bool = False, max_workers: int = 3) -> None:
+                             list_formats: bool = False, max_workers: int = 3, audio_only: bool = False) -> None:
     """
-    Download YouTube content (single videos or playlists) in MP4 format only.
+    Download YouTube content (single videos or playlists) in MP4 format or MP3 audio only.
     Supports multiple URLs for simultaneous downloading.
 
     Args:
@@ -235,6 +262,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
         output_path (str, optional): Directory to save the downloads. Defaults to './downloads'
         list_formats (bool): If True, only list available formats without downloading
         max_workers (int): Maximum number of concurrent downloads
+        audio_only (bool): If True, download audio only in MP3 format
     """
     # Set default output path if none provided
     if output_path is None:
@@ -252,6 +280,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     print(
         f"\n🚀 Starting download of {len(urls)} URL(s) with {max_workers} concurrent workers...")
     print(f"📁 Output directory: {output_path}")
+    print(f"🎧 Format: {'MP3 Audio Only' if audio_only else 'MP4 Video'}")
 
     # Show what types of content we're downloading
     playlist_count = sum(1 for url in urls if is_playlist_url(url))
@@ -270,7 +299,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {
-            executor.submit(download_single_video, url, output_path, i+1): url
+            executor.submit(download_single_video, url, output_path, i+1, audio_only): url
             for i, url in enumerate(urls)
         }
 
@@ -350,6 +379,20 @@ if __name__ == "__main__":
         output_dir = input(
             "\nEnter output directory (press Enter for default): ").strip()
 
+        # Ask for format preference
+        format_choice = input(
+            "\nChoose format:\n"
+            "  1. MP4 Video (default)\n"
+            "  2. MP3 Audio only\n"
+            "Enter choice (1-2, default=1): ").strip()
+
+        audio_only = False
+        if format_choice == '2':
+            audio_only = True
+            print("🎵 Selected: MP3 Audio only")
+        else:
+            print("🎥 Selected: MP4 Video")
+
         # Only ask for concurrent workers if there are multiple URLs
         max_workers = 1  # Default for single URL
         if len(urls) > 1:
@@ -363,12 +406,15 @@ if __name__ == "__main__":
 
         print(f"\n🎬 Starting downloads...")
         print(f"📊 URLs to download: {len(urls)}")
+        print(f"🎧 Format: {'MP3 Audio' if audio_only else 'MP4 Video'}")
         if len(urls) > 1:
             print(f"⚡ Concurrent workers: {max_workers}")
         print(
             f"📁 Output: {output_dir if output_dir else 'default (./downloads)'}")
 
         if output_dir:
-            download_youtube_content(urls, output_dir, max_workers=max_workers)
+            download_youtube_content(
+                urls, output_dir, max_workers=max_workers, audio_only=audio_only)
         else:
-            download_youtube_content(urls, max_workers=max_workers)
+            download_youtube_content(
+                urls, max_workers=max_workers, audio_only=audio_only)
