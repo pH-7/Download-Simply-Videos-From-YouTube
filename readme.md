@@ -276,7 +276,7 @@ You can modify the following in the script:
 
 ☕️ D you enjoy this project? **[Offer me a coffee](https://ko-fi.com/phenry)** (spoiler alert: I love almond flat white! 😋)
 
-[![@phenrysay][twitter-icon]](https://x.com/phenrysay) [![pH-7][github-icon]](https://github.com/pH-7) [![YouTube Tech Videos][youtube-icon]](https://www.youtube.com/@pH7Programming "My YouTube Tech Channel")
+[![@phenrysay][x-icon]](https://x.com/phenrysay "Follow Me on X") [![pH-7][github-icon]](https://github.com/pH-7) [![YouTube Tech Videos][youtube-icon]](https://www.youtube.com/@pH7Programming "My YouTube Tech Channel")
 
 ## 🤝 Contributing
 
@@ -291,6 +291,6 @@ Contributions to this project are welcome. Please fork the repository and submit
 This script is for educational purposes only. Please ensure you have the right to download any content and comply with YouTube's terms of service when using this script.
 
 <!-- GitHub's Markdown reference links -->
-[twitter-icon]: https://img.shields.io/badge/x-000000?style=for-the-badge&logo=x
+[x-icon]: https://img.shields.io/badge/x-000000?style=for-the-badge&logo=x
 [github-icon]: https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white
 [youtube-icon]: https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white
