@@ -12,6 +12,7 @@ This powerful Python script downloads YouTube content in the highest available q
 - 🎯 **Smart URL Detection** - Automatically detects single videos vs playlists
 - ⚡ **Lightning-Fast Concurrent Downloads** - Download multiple videos/playlists simultaneously
 - 🗂️ **Intelligent Organization** - Playlists get their own folders with numbered files
+- 🎵 **MP3 Audio Option** - Download high-quality audio only in MP3 format
 - 🛡️ **Bulletproof Error Handling** - One failed download won't stop the others
 - 🧠 **Intuitive UX** - Only shows relevant options when needed
 
@@ -20,6 +21,7 @@ This powerful Python script downloads YouTube content in the highest available q
 - [🪄 Usage](#-usage)
 - [🎵 Playlist Downloads](#-playlist-downloads)
 - [🛠️ Configuration](#%EF%B8%8F-configuration)
+- [🧹 Clean Up Incomplete Downloads](#-optional-clean-up-incomplete-downloads)
 - [👨‍🍳 Who is the creator?](#-who-created-this)
 - [🤝 Contributing](#-contributing)
 - [⚖️ License](#%EF%B8%8F-license)
@@ -113,6 +115,29 @@ Enter YouTube URL(s): [Press Enter here]
 - 🎯 **Smart validation**: Invalid URLs are automatically skipped with warnings
 - 🧠 **Intelligent prompting**: Concurrent options only appear when downloading multiple videos
 
+### MP3 Audio Downloads 🎵
+You can download audio-only versions of videos and playlists in high-quality MP3 format:
+
+When prompted during download, choose:
+```
+Choose format:
+  1. MP4 Video (default)
+  2. MP3 Audio only
+Enter choice (1-2, default=1): 2
+```
+
+**MP3 Features:**
+- 🎵 **High Quality**: 192kbps MP3 extraction using FFmpeg
+- 📁 **Smart Organization**: Works with playlists - creates MP3 files in playlist folders
+- ⚡ **Fast Processing**: Optimized audio extraction
+- 🎯 **Clean Output**: Pure MP3 files without video data
+
+**Perfect for:**
+- Music playlists
+- Podcasts and interviews
+- Educational content
+- Language learning materials
+
 ## 🎵 Playlist Downloads
 The script fully supports YouTube playlist downloads with smart organization and **concurrent playlist processing**!
 
@@ -183,9 +208,10 @@ Number of concurrent downloads (1-5, default=3): 5
 **🌟 Key Features:**
 - ✨ Support for single videos, playlists, and **multiple URLs simultaneously** (including multiple playlists)
 - 🎥 High-quality video and audio downloads (up to 1080p)
+- 🎵 **MP3 audio-only downloads** with high-quality 192kbps extraction
 - 📁 Organized folder structure with smart playlist handling
 - ⚡ **Unlimited concurrent downloading** for videos and playlists - ideal for super-fast batch downloads
-- 🔄 Format conversion to MP4
+- 🔄 Format conversion to MP4 or MP3
 - 🛡️ Error handling and recovery with detailed reporting
 - 📊 Download progress tracking and summary reports
 - 🎯 Smart URL parsing and validation
