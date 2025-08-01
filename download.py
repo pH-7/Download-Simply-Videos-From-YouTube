@@ -377,7 +377,8 @@ if __name__ == "__main__":
             print(f"   {i}. {url}")
 
         output_dir = input(
-            "\nEnter output directory (press Enter for default): ").strip()
+            "\nEnter output directory (press Enter for default): "
+        ).strip()
 
         # Ask for format preference
         format_choice = input(
