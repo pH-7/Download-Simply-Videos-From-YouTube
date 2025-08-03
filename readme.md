@@ -1,6 +1,6 @@
 # 📥 Download Any Videos From YouTube
 
-**⚡️ High-Quality YouTube Video & Playlist Downloader 🎥**
+**⚡️ High-Quality YouTube Video, Playlist & Channel Downloader 🎥**
 
 ![Demo. Download any YouTube videos and YouTube playlists](promo-assets/demo-download-youtube-videos-script.gif)
 
@@ -8,14 +8,15 @@
 >
 > #### 🚀 The Ultimate YouTube Downloader
 > 
-> Download single videos, entire playlists, or multiple URLs simultaneously with intelligent concurrent processing and smart organization!
+> Download single videos, entire playlists, complete channels, or multiple URLs simultaneously with intelligent concurrent processing and smart organization!
 
 This powerful Python script downloads YouTube content in the highest available quality while handling multiple formats efficiently. Perfect for content creators, educators, and anyone who needs reliable YouTube downloads!
 
 **✨ What makes this special?**
-- 🎯 **Smart URL Detection** - Automatically detects single videos vs playlists
-- ⚡ **Lightning-Fast Concurrent Downloads** - Download multiple videos/playlists simultaneously
-- 🗂️ **Intelligent Organization** - Playlists get their own folders with numbered files
+- 🎯 **Smart URL Detection** - Automatically detects videos, playlists, and channels
+- ⚡ **Lightning-Fast Concurrent Downloads** - Download multiple videos/playlists/channels simultaneously
+- 🗂️ **Intelligent Organization** - Playlists and channels get organized folders
+- 📺 **Full Channel Support** - Download entire YouTube channels with date-organized files
 - 🎵 **MP3 Audio Option** - Download high-quality audio only in MP3 format
 - 🛡️ **Bulletproof Error Handling** - One failed download won't stop the others
 - 🧠 **Intuitive UX** - Only shows relevant options when needed
@@ -24,7 +25,8 @@ This powerful Python script downloads YouTube content in the highest available q
 - [📦 Installation](#-installation)
 - [🪄 Usage](#-usage)
 - [🎵 Playlist Downloads](#-playlist-downloads)
-- [🛠️ Configuration](#%EF%B8%8F-configuration)
+- [� Channel Downloads](#-channel-downloads)
+- [�🛠️ Configuration](#%EF%B8%8F-configuration)
 - [🧹 Clean Up Incomplete Downloads](#-optional-clean-up-incomplete-downloads)
 - [👨‍🍳 Who is the creator?](#-who-created-this)
 - [🤝 Contributing](#-contributing)
@@ -33,7 +35,7 @@ This powerful Python script downloads YouTube content in the highest available q
 ## ⚙️ Requirements
 * [Python v3.7](https://www.python.org/downloads/) or higher 🐍
 * FFmpeg installed on your system 🎬
-* YouTube URLs (single videos or playlists) that you have permission to download 📝
+* YouTube URLs (videos, playlists, or channels) that you have permission to download 📝
 
 ## 📦 Installation
 
@@ -181,6 +183,67 @@ downloads/
 │   └── 02-Last Video.mp4
 └── Individual Video.mp4
 ```
+
+## 📺 Channel Downloads
+Download entire YouTube channels with all their uploaded videos! The script supports all YouTube channel URL formats and organizes videos by upload date.
+
+### **Supported Channel URL Formats**
+The script automatically detects and handles all YouTube channel URL formats:
+
+```
+Enter YouTube URL(s): https://www.youtube.com/@channelname
+```
+
+**All supported formats:**
+- `https://www.youtube.com/@channelname` (New @handle format)
+- `https://www.youtube.com/channel/UCxxxxxxxxx` (Channel ID format)
+- `https://www.youtube.com/c/channelname` (Custom URL format)
+- `https://www.youtube.com/user/username` (Legacy user format)
+
+### **Channel Download Features**
+- 📺 **Complete Channel Downloads** - Gets ALL videos from a channel
+- 📅 **Date-Organized Files** - Videos organized by upload date (YYYYMMDD-Title)
+- 📁 **Channel Folders** - Each channel gets its own folder named after the channel
+- ⚡ **Concurrent Channel Downloads** - Download multiple channels simultaneously
+- 🎵 **MP3 Support** - Full audio-only support for channels
+- 🔄 **Progress Tracking** - See real-time download progress for large channels
+
+### **Channel Examples**
+
+#### **Single Channel**
+```
+Enter YouTube URL(s): https://www.youtube.com/@pH7Programming
+```
+
+#### **Multiple Channels Concurrently** 🚀
+```
+Enter YouTube URL(s): https://www.youtube.com/@TechChannel, https://www.youtube.com/@MusicChannel
+```
+
+#### **Mixed Content Downloads** 🎯
+Combine channels, playlists, and individual videos:
+```
+Enter YouTube URL(s): https://www.youtube.com/@TechChannel, https://www.youtube.com/playlist?list=PLxxxxxx, https://www.youtube.com/watch?v=abc123
+```
+
+**📁 Channel File Structure Example:**
+```
+downloads/
+├── TechChannel/
+│   ├── 20240815-Latest Tech Review.mp4
+│   ├── 20240810-Programming Tutorial.mp4
+│   └── 20240805-Tech News Update.mp4
+├── MusicChannel/
+│   ├── 20240820-New Song Release.mp3
+│   └── 20240815-Behind the Scenes.mp3
+└── Individual Video.mp4
+```
+
+⚠️ **Channel Download Notes:**
+- Large channels may take significant time to download
+- Consider using MP3-only mode for music channels to save space
+- The script respects YouTube's rate limits to avoid blocks
+- Failed videos won't stop the entire channel download
 
 ### Advanced Options
 
