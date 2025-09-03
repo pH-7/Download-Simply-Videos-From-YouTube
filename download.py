@@ -161,7 +161,8 @@ def get_available_formats(url: str) -> None:
         print(f"Error listing formats: {str(e)}")
 
 
-def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False) -> dict:
+def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False, subtitles: bool =
+False) -> dict:
     """
     Download a single YouTube video, playlist, or channel.
 
@@ -170,6 +171,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         output_path (str): Directory to save the download
         thread_id (int): Thread identifier for logging
         audio_only (bool): If True, download audio only in MP3 format
+        subtiles : If True, download subtitles with default langugage english
 
     Returns:
         dict: Result status with success/failure info
@@ -205,7 +207,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         'no_warnings': False,
         'extract_flat': False,
         # Disable additional downloads for clean output
-        'writesubtitles': False,
+        'writesubtitles': subtitles,
         'writethumbnail': False,
         'writeautomaticsub': False,
         'postprocessors': postprocessors,
@@ -216,6 +218,10 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         'fragment_retries': 3,
         # Ensure playlists are fully downloaded
         'noplaylist': False,  # Allow playlist downloads
+        ## Added to download subtitles by default
+        'writeautomaticsub': subtitles,
+        'subtitlesformat': 'srt',
+
     }
 
     # Add merge format for video downloads only
@@ -275,20 +281,20 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
             # Download content
             ydl.download([url])
 
+            result_dict = {
+            'url': url
+            }
+
             if info.get('_type') == 'playlist':
                 title = info.get('title', f'Unknown {content_type.title()}')
                 video_count = len(info.get('entries', []))
-                return {
-                    'url': url,
-                    'success': True,
-                    'message': f"✅ [Thread {thread_id}] {content_type.title()} '{title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'})"
-                }
+                result_dict['message'] = f"✅ [Thread {thread_id}] {content_type.title()} '{title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'})"
+                result_dict['success'] = True
+                result_dict['success_count'] = int(video_count)
             else:
-                return {
-                    'url': url,
-                    'success': True,
-                    'message': f"✅ [Thread {thread_id}] {'Audio' if audio_only else 'Video'} download completed successfully!"
-                }
+                result_dict['message'] =  f"✅ [Thread {thread_id}] {'Audio' if audio_only else 'Video'} download completed successfully!"
+                result_dict['success'] = True
+            return(result_dict)
 
     except Exception as e:
         return {
@@ -299,7 +305,8 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
 
 
 def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
-                             list_formats: bool = False, max_workers: int = 3, audio_only: bool = False) -> None:
+                             list_formats: bool = False, max_workers: int = 3, audio_only: bool = False, subtitles: bool
+                             = False) -> None:
     """
     Download YouTube content (single videos, playlists, or channels) in MP4 format or MP3 audio only.
     Supports multiple URLs for simultaneous downloading.
@@ -310,6 +317,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
         list_formats (bool): If True, only list available formats without downloading
         max_workers (int): Maximum number of concurrent downloads
         audio_only (bool): If True, download audio only in MP3 format
+        subtitles (bool): If True, download subtitles with default language english
     """
     # Set default output path if none provided
     if output_path is None:
@@ -355,12 +363,13 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {
-            executor.submit(download_single_video, url, output_path, i+1, audio_only): url
+            executor.submit(download_single_video, url, output_path, i+1, audio_only, subtitles): url
             for i, url in enumerate(urls)
         }
 
         # Collect results
         for future in as_completed(future_to_url):
+            #print(">>>>>>>>>>>>>>>>> DICTONARY :", future.__dict__)
             result = future.result()
             results.append(result)
             print(result['message'])
@@ -369,11 +378,13 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     print("📊 DOWNLOAD SUMMARY")
     print("=" * 60)
 
-    successful = [r for r in results if r['success']]
-    failed = [r for r in results if not r['success']]
+    successful = len([r for r in results if r['success']])
+    failed = len([r for r in results if not r['success']])
 
-    print(f"✅ Successful downloads: {len(successful)}")
-    print(f"❌ Failed downloads: {len(failed)}")
+    successful = results[0]['success_count'] if 'success_count' in results[0] else successful
+
+    print(f"✅ Successful downloads: {successful}")
+    print(f"❌ Failed downloads: {failed}")
 
     if failed:
         print("\n❌ Failed URLs:")
@@ -458,6 +469,20 @@ if __name__ == "__main__":
         else:
             print("🎥 Selected: MP4 Video")
 
+        subtitles_download = False
+        ## Ask for subtitles preference
+        subtitles_choice = input(
+            "\nDownload subtitles (default langugage : English):\n"
+            "  1. No (default)\n"
+            "  2. Yes\n"
+            "Enter choice (1-2, default=1): ").strip()
+
+        if subtitles_choice == '2':
+           subtitles_download  = True
+           print(" Selected: Download video with subtitles")
+        else:
+           print(" Selected: Download video without subtitles")
+
         # Only ask for concurrent workers if there are multiple URLs
         max_workers = 1  # Default for single URL
         if len(urls) > 1:
@@ -479,7 +504,8 @@ if __name__ == "__main__":
 
         if output_dir:
             download_youtube_content(
-                urls, output_dir, max_workers=max_workers, audio_only=audio_only)
+                urls, output_dir, max_workers=max_workers, audio_only=audio_only, subtitles = subtitles_download)
         else:
             download_youtube_content(
-                urls, max_workers=max_workers, audio_only=audio_only)
+                urls, max_workers=max_workers, audio_only=audio_only, subtitles = subtitles_download)
+
