@@ -69,7 +69,73 @@ Open a terminal in the project folder, then follow these steps:
      ```
    * **Windows**
      Download FFmpeg from the [official website](https://ffmpeg.org/download.html), follow the installation guide, and add it to your `PATH`.
-    Download from the [FFmpeg website](https://ffmpeg.org/download.html), follow the instructions and add to PATH
+    Download from the [FFmpeg website](https://ffmpeg.org/download.html), follow the instructions and add to `PATH`
+
+>Here’s a step-by-step guide for downloading and installing **FFmpeg** on Windows 11:
+>
+>---
+>
+>### **Step 1: Download FFmpeg**
+>
+>1. Open your browser and go to the official FFmpeg download page:  
+>    👉 [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)
+>    
+>2. Under **Get packages & executable files → Windows**, click the **Windows builds by gyan.dev** or **BtbN** (both are reliable).
+>    
+>3. Download the **release build** (usually a `.zip` file like `ffmpeg-release-essentials.zip` or `ffmpeg-master-latest-win64-gpl-shared.zip` in `Windows builds by BtbN`).
+>    
+>
+>---
+>
+>### **Step 2: Extract FFmpeg**
+>
+>1. Once downloaded, right-click the `.zip` file → **Extract All…**.
+>    
+>2. Choose a location (for example, `C:\ffmpeg`).
+>    
+>    - After extraction, you should have a folder like:  
+>        `C:\ffmpeg\ffmpeg-<version>\bin\`
+>       
+
+>---
+>
+>### **Step 3: Add FFmpeg to System PATH**
+>
+>This lets you run FFmpeg from any command prompt window.
+>
+>1. Press **Win + S**, type **Environment Variables**, and click **Edit the system environment variables**.
+>    
+>2. In the **System Properties** window → click **Environment Variables**.
+>    
+>3. Under **System variables**, select **Path** → click **Edit**.
+>    
+>4. Click **New** and paste the path to the **bin** folder, e.g.:  
+>    `C:\ffmpeg\ffmpeg-<version>\bin`
+>    
+>5. Click **OK** on all windows to apply.
+>    
+>
+>---
+>
+>### **Step 4: Verify Installation**
+>
+>1. Press **Win + R**, type `cmd`, and press Enter.
+>    
+>2. Type:
+>    
+>    ```
+>    ffmpeg -version
+>    ```
+>    
+>3. If installed correctly, it will show FFmpeg version info.
+>    
+>
+>---
+>
+>✅ Done! Now you can use `FFmpeg` anywhere in your command prompt.
+>
+>---
+
 
 ## 🪄 Usage
 
