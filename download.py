@@ -2,14 +2,14 @@ from yt_dlp import YoutubeDL
 import os
 import re
 import sys
-from typing import Optional, List, Dict, Tuple
+from typing import Optional
 from urllib.parse import urlparse, parse_qs
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 
 
 @lru_cache(maxsize=128)
-def get_url_info(url: str) -> Tuple[str, Dict]:
+def get_url_info(url: str) -> tuple[str, dict]:
     """
     Get URL information with caching to avoid duplicate yt-dlp calls.
     Returns (content_type, info_dict) for efficient reuse.
@@ -18,7 +18,7 @@ def get_url_info(url: str) -> Tuple[str, Dict]:
         url (str): YouTube URL to analyze
 
     Returns:
-        Tuple[str, Dict]: (content_type, info_dict) where content_type is 'video', 'playlist', or 'channel'
+        tuple[str, dict]: (content_type, info_dict) where content_type is 'video', 'playlist', or 'channel'
     """
     try:
         # Use yt-dlp to extract info without downloading
@@ -102,7 +102,7 @@ def get_content_type(url: str) -> str:
     return content_type
 
 
-def parse_multiple_urls(input_string: str) -> List[str]:
+def parse_multiple_urls(input_string: str) -> list[str]:
     """
     Parse multiple URLs from input string separated by commas, spaces, newlines, or mixed formats.
     Handles complex mixed separators like "url1, url2 url3\nurl4".
@@ -111,7 +111,7 @@ def parse_multiple_urls(input_string: str) -> List[str]:
         input_string (str): String containing one or more URLs
 
     Returns:
-        List[str]: List of cleaned URLs
+        list[str]: List of cleaned URLs
     """
     # Use regex to split by multiple separators: comma, space, newline, tab
     urls = re.split(r'[,\s\n\t]+', input_string.strip())
@@ -298,14 +298,14 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         }
 
 
-def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
+def download_youtube_content(urls: list[str], output_path: Optional[str] = None,
                              list_formats: bool = False, max_workers: int = 3, audio_only: bool = False) -> None:
     """
     Download YouTube content (single videos, playlists, or channels) in MP4 format or MP3 audio only.
     Supports multiple URLs for simultaneous downloading.
 
     Args:
-        urls (List[str]): List of YouTube URLs to download (videos, playlists, or channels)
+        urls (list[str]): List of YouTube URLs to download (videos, playlists, or channels)
         output_path (str, optional): Directory to save the downloads. Defaults to './downloads'
         list_formats (bool): If True, only list available formats without downloading
         max_workers (int): Maximum number of concurrent downloads
