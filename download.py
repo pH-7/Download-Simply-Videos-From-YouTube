@@ -208,11 +208,22 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         'fragment_retries': MAX_RETRIES,
         # Ensure playlists are fully downloaded
         'noplaylist': False,  # Allow playlist downloads
-        # Add headers to avoid 403 errors
+        # Critical: Use Android/iOS clients to bypass 403 errors
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'ios', 'web'],
+                'player_skip': ['webpage', 'configs'],
+            }
+        },
+        # Bypass additional checks
+        'nocheckcertificate': True,
+        'age_limit': None,
+        # Add comprehensive headers to avoid 403 errors
         'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': 'com.google.android.youtube/17.36.4 (Linux; U; Android 12; GB) gzip',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-us,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
             'Sec-Fetch-Mode': 'navigate',
         },
     }
