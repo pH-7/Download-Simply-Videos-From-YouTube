@@ -208,6 +208,13 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         'fragment_retries': MAX_RETRIES,
         # Ensure playlists are fully downloaded
         'noplaylist': False,  # Allow playlist downloads
+        # Add headers to avoid 403 errors
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Sec-Fetch-Mode': 'navigate',
+        },
     }
 
     # Add merge format for video downloads only
@@ -221,22 +228,25 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         ydl_opts['outtmpl'] = os.path.join(
             output_path, '%(playlist_title)s', f'%(playlist_index)s-%(title)s.{file_extension}')
         print(f"📋 [Thread {thread_id}] Detected playlist URL. Downloading entire playlist...")
+        print(f"📁 [Thread {thread_id}] Files will be saved to: {output_path}/[playlist_name]/")
     elif content_type == 'channel':
         ydl_opts['outtmpl'] = os.path.join(
             output_path, '%(uploader)s', f'%(upload_date)s-%(title)s.{file_extension}')
         print(f"📺 [Thread {thread_id}] Detected channel URL. Downloading entire channel...")
+        print(f"📁 [Thread {thread_id}] Files will be saved to: {output_path}/[channel_name]/")
     else:  # single video
         ydl_opts['outtmpl'] = os.path.join(
             output_path, f'%(title)s.{file_extension}')
         print(f"🎥 [Thread {thread_id}] Detected single video URL. Downloading {'audio' if audio_only else 'video'}...")
+        print(f"📁 [Thread {thread_id}] File will be saved to: {output_path}/")
 
     # Retry mechanism with exponential backoff
     last_exception = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             with YoutubeDL(ydl_opts) as ydl:
-                # Extract fresh info for download (cached info is only for detection)
-                info = ydl.extract_info(url, download=False)
+                # Download content (extract_info with download=True does everything)
+                info = ydl.extract_info(url, download=True)
 
                 # Check if info extraction was successful
                 if info is None:
@@ -259,22 +269,17 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
                             'message': f"❌ [Thread {thread_id}] {content_type.title()} appears to be empty or private"
                         }
 
-                # Download content
-                ydl.download([url])
-
-                if info.get('_type') == 'playlist':
-                    title = info.get('title', f'Unknown {content_type.title()}')
-                    video_count = len(info.get('entries', []))
                     return {
                         'url': url,
                         'success': True,
-                        'message': f"✅ [Thread {thread_id}] {content_type.title()} '{title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'})"
+                        'message': f"✅ [Thread {thread_id}] {content_type.title()} '{title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'}) 📂 Location: {output_path}"
                     }
                 else:
+                    title = info.get('title', 'Unknown')
                     return {
                         'url': url,
                         'success': True,
-                        'message': f"✅ [Thread {thread_id}] {'Audio' if audio_only else 'Video'} download completed successfully!"
+                        'message': f"✅ [Thread {thread_id}] {'Audio' if audio_only else 'Video'} '{title}' download completed! 📂 Location: {output_path}"
                     }
 
         except Exception as e:
