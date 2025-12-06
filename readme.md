@@ -33,7 +33,7 @@ This powerful Python script downloads YouTube content in the highest available q
 - [⚖️ License](#%EF%B8%8F-license)
 
 ## ⚙️ Requirements
-* [Python v3.7](https://www.python.org/downloads/) or higher 🐍
+* [Python v3.10](https://www.python.org/downloads/) or higher 🐍
 * FFmpeg installed on your system 🎬
 * YouTube URLs (videos, playlists, or channels) that you have permission to download 📝
 
@@ -69,7 +69,7 @@ Open a terminal in the project folder, then follow these steps:
      ```
    * **Windows**
      Download FFmpeg from the [official website](https://ffmpeg.org/download.html), follow the installation guide, and add it to your `PATH`.
-    Download from the [FFmpeg website](https://ffmpeg.org/download.html), follow the instructions and add to PATH
+   Download from the [FFmpeg website](https://ffmpeg.org/download.html), follow the instructions and add to PATH
 
 ## 🪄 Usage
 

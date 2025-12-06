@@ -1,15 +1,24 @@
+import sys
 from yt_dlp import YoutubeDL
 import os
 import re
-import sys
-from typing import Optional
+import time
+import warnings
+from typing import Optional, List, Dict, Tuple
 from urllib.parse import urlparse, parse_qs
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
+from tqdm import tqdm
+
+# Configuration constants
+MAX_RETRIES = 3
+RETRY_DELAY = 2  # Initial delay in seconds
+MAX_CONCURRENT_WORKERS = 5
+DEFAULT_CONCURRENT_WORKERS = 3
 
 
 @lru_cache(maxsize=128)
-def get_url_info(url: str) -> tuple[str, dict]:
+def get_url_info(url: str) -> Tuple[str, Dict]:
     """
     Get URL information with caching to avoid duplicate yt-dlp calls.
     Returns (content_type, info_dict) for efficient reuse.
@@ -18,7 +27,7 @@ def get_url_info(url: str) -> tuple[str, dict]:
         url (str): YouTube URL to analyze
 
     Returns:
-        tuple[str, dict]: (content_type, info_dict) where content_type is 'video', 'playlist', or 'channel'
+        Tuple[str, Dict]: (content_type, info_dict) where content_type is 'video', 'playlist', or 'channel'
     """
     try:
         # Use yt-dlp to extract info without downloading
@@ -102,7 +111,7 @@ def get_content_type(url: str) -> str:
     return content_type
 
 
-def parse_multiple_urls(input_string: str) -> list[str]:
+def parse_multiple_urls(input_string: str) -> List[str]:
     """
     Parse multiple URLs from input string separated by commas, spaces, newlines, or mixed formats.
     Handles complex mixed separators like "url1, url2 url3\nurl4".
@@ -111,7 +120,7 @@ def parse_multiple_urls(input_string: str) -> list[str]:
         input_string (str): String containing one or more URLs
 
     Returns:
-        list[str]: List of cleaned URLs
+        List[str]: List of cleaned URLs
     """
     # Use regex to split by multiple separators: comma, space, newline, tab
     urls = re.split(r'[,\s\n\t]+', input_string.strip())
@@ -161,19 +170,44 @@ def get_available_formats(url: str) -> None:
         print(f"Error listing formats: {str(e)}")
 
 
-def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False) -> dict:
+def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False, 
+                         progress_bar: Optional[tqdm] = None) -> dict:
     """
-    Download a single YouTube video, playlist, or channel.
+    Download a single YouTube video, playlist, or channel with retry mechanism.
 
     Args:
         url (str): YouTube URL to download (video, playlist, or channel)
         output_path (str): Directory to save the download
         thread_id (int): Thread identifier for logging
         audio_only (bool): If True, download audio only in MP3 format
+        progress_bar (Optional[tqdm]): Progress bar instance for updating download progress
 
     Returns:
         dict: Result status with success/failure info
     """
+    # Progress tracking for yt-dlp
+    def progress_hook(d):
+        if not progress_bar:
+            return
+            
+        if d['status'] == 'downloading':
+            # Get total bytes
+            total = d.get('total_bytes') or d.get('total_bytes_estimate')
+            downloaded = d.get('downloaded_bytes', 0)
+            
+            if total:
+                progress_bar.total = total
+                progress_bar.n = downloaded
+                progress_bar.refresh()
+            else:
+                # If no total, just update with downloaded bytes
+                progress_bar.n = downloaded
+                progress_bar.refresh()
+        elif d['status'] == 'finished':
+            if progress_bar.total:
+                progress_bar.n = progress_bar.total
+                progress_bar.refresh()
+
     if audio_only:
         # Configure for audio-only MP3 downloads
         format_selector = 'bestaudio/best'
@@ -183,7 +217,10 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }]
-        print(f"🎵 [Thread {thread_id}] Audio-only mode: Downloading MP3...")
+        if progress_bar:
+            progress_bar.set_description(f"🎵 [T{thread_id}] Downloading MP3")
+        else:
+            print(f"🎵 [Thread {thread_id}] Audio-only mode: Downloading MP3...")
     else:
         # Configure for video downloads
         format_selector = (
@@ -212,10 +249,12 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         # Clean up options
         'keepvideo': False,
         'clean_infojson': True,
-        'retries': 3,
-        'fragment_retries': 3,
+        'retries': MAX_RETRIES,
+        'fragment_retries': MAX_RETRIES,
         # Ensure playlists are fully downloaded
         'noplaylist': False,  # Allow playlist downloads
+        # Progress hook
+        'progress_hooks': [progress_hook],
     }
 
     # Add merge format for video downloads only
@@ -225,90 +264,115 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
     # Set different output templates for playlists, channels and single videos
     content_type, cached_info = get_url_info(url)
 
-    # Debug: Print detection result
-    if thread_id == 1:  # Only print for first thread to avoid spam
-        print(f"🔍 [Debug] URL analysis: {content_type.title()}")
-
     if content_type == 'playlist':
         ydl_opts['outtmpl'] = os.path.join(
             output_path, '%(playlist_title)s', f'%(playlist_index)s-%(title)s.{file_extension}')
-        print(
-            f"📋 [Thread {thread_id}] Detected playlist URL. Downloading entire playlist...")
+        if progress_bar:
+            progress_bar.set_description(f"📋 [T{thread_id}] Playlist")
+        else:
+            print(f"📋 [Thread {thread_id}] Detected playlist URL. Downloading entire playlist...")
     elif content_type == 'channel':
         ydl_opts['outtmpl'] = os.path.join(
             output_path, '%(uploader)s', f'%(upload_date)s-%(title)s.{file_extension}')
-        print(
-            f"📺 [Thread {thread_id}] Detected channel URL. Downloading entire channel...")
+        if progress_bar:
+            progress_bar.set_description(f"📺 [T{thread_id}] Channel")
+        else:
+            print(f"📺 [Thread {thread_id}] Detected channel URL. Downloading entire channel...")
     else:  # single video
         ydl_opts['outtmpl'] = os.path.join(
             output_path, f'%(title)s.{file_extension}')
-        print(
-            f"🎥 [Thread {thread_id}] Detected single video URL. Downloading {'audio' if audio_only else 'video'}...")
+        if progress_bar:
+            progress_bar.set_description(f"🎥 [T{thread_id}] {'Audio' if audio_only else 'Video'}")
+        else:
+            print(f"🎥 [Thread {thread_id}] Detected single video URL. Downloading {'audio' if audio_only else 'video'}...")
 
-    try:
-        with YoutubeDL(ydl_opts) as ydl:
-            # Extract fresh info for download (cached info is only for detection)
-            info = ydl.extract_info(url, download=False)
+    # Retry mechanism with exponential backoff
+    last_exception = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            with YoutubeDL(ydl_opts) as ydl:
+                # Extract fresh info for download (cached info is only for detection)
+                info = ydl.extract_info(url, download=False)
 
-            # Check if info extraction was successful
-            if info is None:
-                return {
-                    'url': url,
-                    'success': False,
-                    'message': f"❌ [Thread {thread_id}] Failed to extract video information. Video may be private or unavailable."
-                }
-
-            if info.get('_type') == 'playlist':
-                title = info.get('title', 'Unknown Playlist')
-                video_count = len(info.get('entries', []))
-                print(
-                    f"📋 [Thread {thread_id}] {content_type.title()}: '{title}' ({video_count} videos)")
-
-                # Ensure we have entries to download
-                if video_count == 0:
+                # Check if info extraction was successful
+                if info is None:
                     return {
                         'url': url,
                         'success': False,
-                        'message': f"❌ [Thread {thread_id}] {content_type.title()} appears to be empty or private"
+                        'message': f"❌ [Thread {thread_id}] Failed to extract video information. Video may be private or unavailable."
                     }
 
-            # Download content
-            ydl.download([url])
+                if info.get('_type') == 'playlist':
+                    title = info.get('title', 'Unknown Playlist')
+                    video_count = len(info.get('entries', []))
+                    if progress_bar:
+                        progress_bar.write(f"📋 [Thread {thread_id}] {content_type.title()}: '{title}' ({video_count} videos)")
+                    else:
+                        print(f"📋 [Thread {thread_id}] {content_type.title()}: '{title}' ({video_count} videos)")
 
-            if info.get('_type') == 'playlist':
-                title = info.get('title', f'Unknown {content_type.title()}')
-                video_count = len(info.get('entries', []))
-                return {
-                    'url': url,
-                    'success': True,
-                    'message': f"✅ [Thread {thread_id}] {content_type.title()} '{title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'})"
-                }
+                    # Ensure we have entries to download
+                    if video_count == 0:
+                        return {
+                            'url': url,
+                            'success': False,
+                            'message': f"❌ [Thread {thread_id}] {content_type.title()} appears to be empty or private"
+                        }
+
+                # Download content
+                ydl.download([url])
+
+                if info.get('_type') == 'playlist':
+                    title = info.get('title', f'Unknown {content_type.title()}')
+                    video_count = len(info.get('entries', []))
+                    return {
+                        'url': url,
+                        'success': True,
+                        'message': f"✅ [Thread {thread_id}] {content_type.title()} '{title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'})"
+                    }
+                else:
+                    return {
+                        'url': url,
+                        'success': True,
+                        'message': f"✅ [Thread {thread_id}] {'Audio' if audio_only else 'Video'} download completed successfully!"
+                    }
+
+        except Exception as e:
+            last_exception = e
+            if attempt < MAX_RETRIES:
+                retry_delay = RETRY_DELAY * (2 ** (attempt - 1))  # Exponential backoff
+                error_msg = f"⚠️  [Thread {thread_id}] Attempt {attempt}/{MAX_RETRIES} failed: {str(e)[:100]}. Retrying in {retry_delay}s..."
+                if progress_bar:
+                    progress_bar.write(error_msg)
+                else:
+                    print(error_msg)
+                time.sleep(retry_delay)
             else:
                 return {
                     'url': url,
-                    'success': True,
-                    'message': f"✅ [Thread {thread_id}] {'Audio' if audio_only else 'Video'} download completed successfully!"
+                    'success': False,
+                    'message': f"❌ [Thread {thread_id}] Failed after {MAX_RETRIES} attempts. Last error: {str(last_exception)}"
                 }
 
-    except Exception as e:
-        return {
-            'url': url,
-            'success': False,
-            'message': f"❌ [Thread {thread_id}] Error: {str(e)}"
-        }
+    # This should never be reached, but just in case
+    return {
+        'url': url,
+        'success': False,
+        'message': f"❌ [Thread {thread_id}] Unexpected error: {str(last_exception)}"
+    }
 
 
-def download_youtube_content(urls: list[str], output_path: Optional[str] = None,
-                             list_formats: bool = False, max_workers: int = 3, audio_only: bool = False) -> None:
+def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
+                             list_formats: bool = False, max_workers: int = DEFAULT_CONCURRENT_WORKERS, 
+                             audio_only: bool = False) -> None:
     """
     Download YouTube content (single videos, playlists, or channels) in MP4 format or MP3 audio only.
-    Supports multiple URLs for simultaneous downloading.
+    Supports multiple URLs for simultaneous downloading with progress bars and optimized concurrency.
 
     Args:
-        urls (list[str]): List of YouTube URLs to download (videos, playlists, or channels)
+        urls (List[str]): List of YouTube URLs to download (videos, playlists, or channels)
         output_path (str, optional): Directory to save the downloads. Defaults to './downloads'
         list_formats (bool): If True, only list available formats without downloading
-        max_workers (int): Maximum number of concurrent downloads
+        max_workers (int): Maximum number of concurrent downloads (1-5, default=3)
         audio_only (bool): If True, download audio only in MP3 format
     """
     # Set default output path if none provided
@@ -351,19 +415,49 @@ def download_youtube_content(urls: list[str], output_path: Optional[str] = None,
 
     print("-" * 60)
 
-    # Concurrent downloads
+    # Concurrent downloads with progress bars
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Create progress bars for each download
+        progress_bars = {}
+        for i in range(len(urls)):
+            pbar = tqdm(
+                total=0,  # Start with 0, will be updated by progress hook
+                desc=f"[T{i+1}] Initializing",
+                position=i,
+                leave=True,
+                unit='B',
+                unit_scale=True,
+                unit_divisor=1024,
+                dynamic_ncols=True,
+                bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]'
+            )
+            progress_bars[i] = pbar
+
         future_to_url = {
-            executor.submit(download_single_video, url, output_path, i+1, audio_only): url
+            executor.submit(download_single_video, url, output_path, i+1, audio_only, progress_bars[i]): (url, i)
             for i, url in enumerate(urls)
         }
 
         # Collect results
         for future in as_completed(future_to_url):
+            url, idx = future_to_url[future]
             result = future.result()
             results.append(result)
-            print(result['message'])
+            
+            # Update progress bar to 100% and close
+            if progress_bars[idx].total:
+                progress_bars[idx].n = progress_bars[idx].total
+                progress_bars[idx].refresh()
+            progress_bars[idx].close()
+            
+            # Print result message after closing progress bar
+            tqdm.write(result['message'])
+
+        # Ensure all progress bars are closed
+        for pbar in progress_bars.values():
+            if not pbar.disable:
+                pbar.close()
 
     print("\n" + "=" * 60)
     print("📊 DOWNLOAD SUMMARY")
@@ -462,12 +556,12 @@ if __name__ == "__main__":
         max_workers = 1  # Default for single URL
         if len(urls) > 1:
             workers_input = input(
-                "Number of concurrent downloads (1-5, default=3): ").strip()
+                f"Number of concurrent downloads (1-{MAX_CONCURRENT_WORKERS}, default={DEFAULT_CONCURRENT_WORKERS}): ").strip()
             try:
-                max_workers = int(workers_input) if workers_input else 3
-                max_workers = max(1, min(5, max_workers))  # Clamp between 1-5
+                max_workers = int(workers_input) if workers_input else DEFAULT_CONCURRENT_WORKERS
+                max_workers = max(1, min(MAX_CONCURRENT_WORKERS, max_workers))  # Clamp between 1-5
             except ValueError:
-                max_workers = 3
+                max_workers = DEFAULT_CONCURRENT_WORKERS
 
         print(f"\n🎬 Starting downloads...")
         print(f"📊 URLs to download: {len(urls)}")
