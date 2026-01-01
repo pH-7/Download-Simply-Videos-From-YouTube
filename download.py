@@ -236,6 +236,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
                     return {
                         'url': url,
                         'success': False,
+                        'count': 0,
                         'message': f"❌ [Thread {thread_id}] Failed to extract video information. Video may be private or unavailable."
                     }
 
@@ -248,12 +249,14 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
                         return {
                             'url': url,
                             'success': False,
+                            'count': 0,
                             'message': f"❌ [Thread {thread_id}] {content_type.title()} appears to be empty or private"
                         }
 
                     return {
                         'url': url,
                         'success': True,
+                        'count': video_count,
                         'message': f"✅ [Thread {thread_id}] {content_type.title()} '{title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'}) 📂 Location: {output_path}"
                     }
                 else:
@@ -261,6 +264,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
                     return {
                         'url': url,
                         'success': True,
+                        'count': 1,
                         'message': f"✅ [Thread {thread_id}] {'Audio' if audio_only else 'Video'} '{title}' download completed! 📂 Location: {output_path}"
                     }
 
@@ -275,12 +279,14 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
                 return {
                     'url': url,
                     'success': False,
+                    'count': 0,
                     'message': f"❌ [Thread {thread_id}] Failed after {MAX_RETRIES} attempts. Last error: {str(last_exception)}"
                 }
 
     return {
         'url': url,
         'success': False,
+        'count': 0,
         'message': f"❌ [Thread {thread_id}] Unexpected error: {str(last_exception)}"
     }
 
@@ -354,8 +360,11 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     successful_downloads = [r for r in results if r['success']]
     failed_downloads = [r for r in results if not r['success']]
 
-    print(f"✅ Successful downloads: {len(successful_downloads)}")
-    print(f"❌ Failed downloads: {len(failed_downloads)}")
+    total_successful_count = sum(r.get('count', 1) for r in successful_downloads)
+    total_failed_count = sum(r.get('count', 1) for r in failed_downloads)
+
+    print(f"✅ Successful downloads: {total_successful_count} {'files' if total_successful_count != 1 else 'file'}")
+    print(f"❌ Failed downloads: {total_failed_count} {'files' if total_failed_count != 1 else 'file'}")
 
     if failed_downloads:
         print("\n❌ Failed URLs:")
