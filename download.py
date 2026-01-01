@@ -367,8 +367,8 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     print(f"❌ Failed downloads: {total_failed_count} {'files' if total_failed_count != 1 else 'file'}")
 
     if failed_downloads:
-    print("\n❌ Failed URLs:")
-    for result in failed_downloads:
+        print("\n❌ Failed URLs:")
+        for result in failed_downloads:
         print(f"   • {result['url']}")
         print(f"     Reason: {result['message']}")
 
