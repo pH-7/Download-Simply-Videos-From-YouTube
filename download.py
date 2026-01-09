@@ -175,35 +175,30 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         }]
 
     downloader_options = {
-        'format': format_selector,
-        'ignoreerrors': True,
-        'no_warnings': False,
-        'extract_flat': False,
-        'writesubtitles': False,
-        'writethumbnail': False,
-        'writeautomaticsub': False,
-        'postprocessors': postprocessors,
-        'keepvideo': False,
-        'clean_infojson': True,
-        'retries': MAX_RETRIES,
-        'fragment_retries': MAX_RETRIES,
-        'noplaylist': False,
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'ios', 'web'],
-                'player_skip': ['webpage', 'configs'],
-            }
-        },
-        'nocheckcertificate': True,
-        'age_limit': None,
-        'http_headers': {
-            'User-Agent': 'com.google.android.youtube/17.36.4 (Linux; U; Android 12; GB) gzip',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-us,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Sec-Fetch-Mode': 'navigate',
-        },
-    }
+    'format': format_selector,
+    'ignoreerrors': True,
+    'no_warnings': False,
+
+    # PLAYLIST FIX
+    'noplaylist': False,
+    'extract_flat': False,
+
+    # OUTPUT / POST
+    'postprocessors': postprocessors,
+    'keepvideo': False,
+    'clean_infojson': True,
+
+    # RETRIES
+    'retries': MAX_RETRIES,
+    'fragment_retries': MAX_RETRIES,
+
+    # YOUTUBE SAFETY
+    'compat_opts': ['no-youtube-unavailable-videos'],
+    'youtube_include_dash_manifest': False,
+
+    # NETWORK (let yt-dlp decide)
+    'nocheckcertificate': True,
+}
 
     if not audio_only:
         downloader_options['merge_output_format'] = 'mp4'
