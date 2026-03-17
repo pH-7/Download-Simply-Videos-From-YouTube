@@ -109,6 +109,10 @@ Enter YouTube URL(s): [press Enter]
    URL 3: [press Enter again to finish]
 ```
 
+You can freely mix videos, playlists, and channel URLs in the same command — the script handles each one correctly.
+
+> **If one URL fails, the rest keep downloading.** A dead link or private video won't stop your other downloads.
+
 ### Download audio only (MP3) 🎵
 
 When the script asks for a format, choose option `2`:
@@ -131,6 +135,8 @@ Enter YouTube URL(s): https://www.youtube.com/playlist?list=PLxxxxxxx
 ```
 
 You can download multiple playlists at once by separating their URLs with commas.
+
+MP3 mode works with playlists too — all audio files are saved in the same numbered folder structure.
 
 **📁 Example result:**
 ```
@@ -161,7 +167,9 @@ All these URL formats work automatically:
 
 Videos are saved in a folder named after the channel, sorted by upload date.
 
-> **Heads up:** channels with hundreds of videos can take a long time to download.
+MP3 mode works for channels too — useful for music or podcast channels to save disk space.
+
+> **Heads up:** channels with hundreds of videos can take a long time to download. The script paces requests automatically to avoid being blocked by YouTube.
 
 **📁 Channel file structure example:**
 ```
