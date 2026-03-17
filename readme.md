@@ -67,15 +67,27 @@ Click the green **Code** button at the top of this page → **Download ZIP**. Un
 
 ### Step 5 — Install the required libraries
 
-In the terminal, run:
+In the terminal, run these three commands one by one:
 
 ```bash
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+> **Windows:** use `venv\Scripts\activate` instead of `source venv/bin/activate`.
+
 That's it — you're ready! See [Usage](#-usage) below.
 
+> **Each time you open a new terminal**, you must run `source venv/bin/activate` (macOS/Linux) or `venv\Scripts\activate` (Windows) before using the script.
+
 ## 🪄 Usage
+
+> **First, make sure your virtual environment is active.** If you see `(venv)` at the start of your terminal prompt, you're good. If not, run:
+> ```bash
+> source venv/bin/activate
+> ```
+> (Windows: `venv\Scripts\activate`)
 
 In your terminal, run:
 
@@ -186,10 +198,10 @@ downloads/
 If a download was interrupted (e.g. you lost internet or closed the terminal), some unfinished files may be left in the `downloads/` folder. To remove them, run:
 
 ```bash
-python cleanup_downloads.py
+python cleanup_downloads.py # python3 cleanup_downloads.py
 ```
 
-This only deletes incomplete files — your finished downloads are untouched. Most people will never need this.
+This only deletes incomplete files (`.part`, `.ytdl`, temp fragments) — your finished downloads are untouched. No need to activate the virtual environment for this; it uses no external dependencies. Most people will never need this.
 
 ---
 
