@@ -273,7 +273,7 @@ You can edit `download.py` to change:
 
 ## 🤝 Contributing
 
-Contributions to this project are welcome. Please fork the repository and submit a pull request with your changes.
+Fork the repo and submit a pull request.
 
 ## ⚖️ License
 
