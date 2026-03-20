@@ -65,9 +65,11 @@ Click the green **Code** button at the top of this page → **Download ZIP**. Un
 - **Windows:** open the folder, click the address bar at the top, type `cmd`, press Enter
 - **Linux:** right-click the folder → **Open Terminal**
 
-### Step 5 — Install the required libraries
+### Step 5 — Set up a sandbox and install libraries
 
-In the terminal, run these three commands one by one:
+macOS (and modern Linux) no longer allow installing Python packages directly. You will get `externally-managed-environment` error if you try. The fix is a **virtual environment** (a self-contained sandbox just for this project).
+
+Run these three commands in order:
 
 ```bash
 python3 -m venv venv
@@ -77,9 +79,9 @@ pip install -r requirements.txt
 
 > **Windows:** use `venv\Scripts\activate` instead of `source venv/bin/activate`.
 
-That's it — you're ready! See [Usage](#-usage) below.
+You'll see `(venv)` appear at the start of your prompt — that means the sandbox is active. That's it — you're ready!
 
-> **Each time you open a new terminal**, you must run `source venv/bin/activate` (macOS/Linux) or `venv\Scripts\activate` (Windows) before using the script.
+> **Each time you open a new terminal**, run `source venv/bin/activate` (macOS/Linux) or `venv\Scripts\activate` (Windows) before using the script.
 
 ## 🪄 Usage
 
