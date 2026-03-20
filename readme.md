@@ -5,17 +5,16 @@
 ![Demo. Download any YouTube videos and YouTube playlists](promo-assets/demo-download-youtube-videos-script.gif)
 
 > [!Note]
->
-> #### 🚀 The Ultimate YouTube Downloader
-> 
-> Download any YouTube video, playlist, or entire channel just by pasting a URL. Videos are saved to your computer in high quality — no account or sign-in needed.
+> Download any YouTube video, playlist, or entire channel just by pasting a URL. Videos are saved in high quality — no account needed.
 
 **What you can do:**
 - 🎥 Download any YouTube video as MP4
 - 🎵 Download audio-only as MP3 (great for music and podcasts)
-- 📋 Download entire playlists — each saved in its own numbered folder
+- 📋 Download entire playlists, each saved in its own numbered folder
 - 📺 Download a whole YouTube channel
 - ⚡ Download multiple videos or playlists at the same time
+
+---
 
 - [🚀 Quick Start](#-quick-start)
 - [🪄 Usage](#-usage)
@@ -23,10 +22,10 @@
 - [📺 Channel Downloads](#-channel-downloads)
 - [🧹 Clean Up Incomplete Downloads](#-optional-clean-up-incomplete-downloads)
 - [📦 Full Setup (for developers)](#-full-setup-for-developers)
-- [🛠️ Advanced Options](#%EF%B8%8F-advanced-options)
+- [🛠️ Advanced Options](#-advanced-options)
 - [👨‍🍳 Who made this?](#-who-cooked-this)
 - [🤝 Contributing](#-contributing)
-- [⚖️ License](#%EF%B8%8F-license)
+- [⚖️ License](#-license)
 
 ## 🚀 Quick Start
 
