@@ -12,14 +12,7 @@ MAX_RETRIES = 3
 RETRY_DELAY = 2
 MAX_CONCURRENT_WORKERS = 5
 DEFAULT_CONCURRENT_WORKERS = 3
-YOUTUBE_PLAYER_CLIENTS = ['android', 'ios', 'web']
-YOUTUBE_HTTP_HEADERS = {
-    'User-Agent': 'com.google.android.youtube/17.36.4 (Linux; U; Android 12; GB) gzip',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en-us,en;q=0.5',
-    'Accept-Encoding': 'gzip, deflate',
-    'Sec-Fetch-Mode': 'navigate',
-}
+YOUTUBE_PLAYER_CLIENTS = ['web', 'android', 'ios']
 
 
 @lru_cache(maxsize=128)
@@ -202,7 +195,6 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
                 'player_client': YOUTUBE_PLAYER_CLIENTS,
             }
         },
-        'http_headers': YOUTUBE_HTTP_HEADERS,
         'nocheckcertificate': True,
     }
 
