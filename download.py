@@ -200,7 +200,6 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         'extractor_args': {
             'youtube': {
                 'player_client': YOUTUBE_PLAYER_CLIENTS,
-                'player_skip': ['webpage', 'configs'],
             }
         },
         'http_headers': YOUTUBE_HTTP_HEADERS,
