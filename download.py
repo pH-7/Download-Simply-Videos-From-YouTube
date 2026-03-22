@@ -172,15 +172,19 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         }]
         print(f"🎵 [Thread {thread_id}] Audio-only mode: Downloading MP3...")
     else:
+        # Prefer h264/aac (native MP4 codecs) to avoid re-encoding quality loss
+        # Always use separate video+audio streams for best quality — never fall back to pre-merged
+        # streams (e.g. best[height<=1080]) as those are typically capped at 720p with lower bitrates
         format_selector = (
-            'bestvideo[height<=1080]+bestaudio/best[height<=1080]/'
+            'bestvideo[height<=1080][vcodec^=avc1]+bestaudio[acodec^=mp4a]/'
+            'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/'
+            'bestvideo[height<=1080]+bestaudio/'
+            'bestvideo+bestaudio/'
             'best'
         )
         file_extension = 'mp4'
-        postprocessors = [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
-        }]
+        # Only remux (no re-encoding) when merging separate streams
+        postprocessors = []
 
     downloader_options = {
         'format': format_selector,
