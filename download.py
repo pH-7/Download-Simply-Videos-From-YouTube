@@ -142,7 +142,7 @@ def get_available_formats(url: str) -> None:
         print(f"Error listing formats: {str(error)}")
 
 
-def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False) -> dict:
+def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False, max_resolution: Optional[int] = None) -> dict:
     """
     Download a single YouTube video, playlist, or channel with retry mechanism.
 
@@ -151,6 +151,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         output_path (str): Directory to save the download
         thread_id (int): Thread identifier for logging
         audio_only (bool): If True, download audio only in MP3 format
+        max_resolution (int, optional): Maximum video height (e.g., 720, 1080, 1440, 2160). None = best available.
 
     Returns:
         dict: Result status with success/failure info
@@ -166,15 +167,23 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         print(f"🎵 [Thread {thread_id}] Audio-only mode: Downloading MP3...")
     else:
         # Prefer h264/aac (native MP4 codecs) to avoid re-encoding quality loss
-        # Always use separate video+audio streams for best quality — never fall back to pre-merged
-        # streams (e.g. best[height<=1080]) as those are typically capped at 720p with lower bitrates
-        format_selector = (
-            'bestvideo[height<=1080][vcodec^=avc1]+bestaudio[acodec^=mp4a]/'
-            'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/'
-            'bestvideo[height<=1080]+bestaudio/'
-            'bestvideo+bestaudio/'
-            'best'
-        )
+        # Use separate video+audio streams for best quality
+        if max_resolution:
+            # User specified a max resolution - strictly enforce it
+            format_selector = (
+                f'bestvideo[height<={max_resolution}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/'
+                f'bestvideo[height<={max_resolution}][ext=mp4]+bestaudio[ext=m4a]/'
+                f'bestvideo[height<={max_resolution}]+bestaudio/'
+                f'best[height<={max_resolution}]'
+            )
+        else:
+            # No limit - get the best available quality
+            format_selector = (
+                'bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/'
+                'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
+                'bestvideo+bestaudio/'
+                'best'
+            )
         file_extension = 'mp4'
         # Only remux (no re-encoding) when merging separate streams
         postprocessors = []
@@ -286,7 +295,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
 
 def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
                              list_formats: bool = False, max_workers: int = DEFAULT_CONCURRENT_WORKERS, 
-                             audio_only: bool = False) -> None:
+                             audio_only: bool = False, max_resolution: Optional[int] = None) -> None:
     """
     Download YouTube content (single videos, playlists, or channels) in MP4 format or MP3 audio only.
     Supports multiple URLs for simultaneous downloading with optimized concurrency.
@@ -297,6 +306,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
         list_formats (bool): If True, only list available formats without downloading
         max_workers (int): Maximum number of concurrent downloads (1-5, default=3)
         audio_only (bool): If True, download audio only in MP3 format
+        max_resolution (int, optional): Maximum video height (e.g., 720, 1080, 1440, 2160). None = best available.
     """
     if output_path is None:
         output_path = os.path.join(os.getcwd(), 'downloads')
@@ -311,7 +321,12 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     print(
         f"\n🚀 Starting download of {len(urls)} URL(s) with {max_workers} concurrent workers...")
     print(f"📁 Output directory: {output_path}")
-    print(f"🎧 Format: {'MP3 Audio Only' if audio_only else 'MP4 Video'}")
+    if audio_only:
+        print("🎧 Format: MP3 Audio Only")
+    elif max_resolution:
+        print(f"🎧 Format: MP4 Video (max {max_resolution}p)")
+    else:
+        print("🎧 Format: MP4 Video (best quality)")
 
     playlist_count = sum(
         1 for url in urls if get_content_type(url) == 'playlist')
@@ -337,7 +352,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {
-            executor.submit(download_single_video, url, output_path, i+1, audio_only): url
+            executor.submit(download_single_video, url, output_path, i+1, audio_only, max_resolution): url
             for i, url in enumerate(urls)
         }
 
@@ -432,11 +447,34 @@ if __name__ == "__main__":
             "Enter choice (1-2, default=1): ").strip()
 
         audio_only = False
+        max_resolution = None
         if format_choice == '2':
             audio_only = True
             print("🎵 Selected: MP3 Audio only")
         else:
             print("🎥 Selected: MP4 Video")
+            resolution_choice = input(
+                "\nChoose max resolution:\n"
+                "  1. Best available (default)\n"
+                "  2. 2160p (4K)\n"
+                "  3. 1440p (2K)\n"
+                "  4. 1080p (Full HD)\n"
+                "  5. 720p (HD)\n"
+                "  6. 480p (SD)\n"
+                "Enter choice (1-6, default=1): ").strip()
+
+            resolution_map = {
+                '2': 2160,
+                '3': 1440,
+                '4': 1080,
+                '5': 720,
+                '6': 480,
+            }
+            max_resolution = resolution_map.get(resolution_choice)
+            if max_resolution:
+                print(f"📺 Selected: Max {max_resolution}p")
+            else:
+                print("📺 Selected: Best available quality")
 
         max_workers = 1
         if len(urls) > 1:
@@ -450,7 +488,12 @@ if __name__ == "__main__":
 
         print(f"\n🎬 Starting downloads...")
         print(f"📊 URLs to download: {len(urls)}")
-        print(f"🎧 Format: {'MP3 Audio' if audio_only else 'MP4 Video'}")
+        if audio_only:
+            print("🎙️ Format: MP3 Audio")
+        elif max_resolution:
+            print(f"🎙️ Format: MP4 Video (max {max_resolution}p)")
+        else:
+            print("🎙️ Format: MP4 Video (best quality)")
         if len(urls) > 1:
             print(f"⚡ Concurrent workers: {max_workers}")
         print(
@@ -458,7 +501,7 @@ if __name__ == "__main__":
 
         if output_dir:
             download_youtube_content(
-                urls, output_dir, max_workers=max_workers, audio_only=audio_only)
+                urls, output_dir, max_workers=max_workers, audio_only=audio_only, max_resolution=max_resolution)
         else:
             download_youtube_content(
-                urls, max_workers=max_workers, audio_only=audio_only)
+                urls, max_workers=max_workers, audio_only=audio_only, max_resolution=max_resolution)
