@@ -6,3 +6,6 @@ downloads/*
 
 ## Misc files ##
 .DS_Store
+
+## Virtual environment ##
+venv/
