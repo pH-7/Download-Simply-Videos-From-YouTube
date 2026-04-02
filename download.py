@@ -12,7 +12,6 @@ MAX_RETRIES = 3
 RETRY_DELAY = 2
 MAX_CONCURRENT_WORKERS = 5
 DEFAULT_CONCURRENT_WORKERS = 3
-YOUTUBE_PLAYER_CLIENTS = ['web', 'android', 'ios']
 
 
 @lru_cache(maxsize=128)
@@ -192,11 +191,6 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         'clean_infojson': True,
         'retries': MAX_RETRIES,
         'fragment_retries': MAX_RETRIES,
-        'extractor_args': {
-            'youtube': {
-                'player_client': YOUTUBE_PLAYER_CLIENTS,
-            }
-        },
         'nocheckcertificate': True,
     }
 
