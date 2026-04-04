@@ -41,21 +41,26 @@
 
 > **Windows users:** during installation, tick the **"Add Python to PATH"** checkbox at the bottom of the first screen — easy to miss!
 
-### Step 2 — Install FFmpeg
+### Step 2 — Install FFmpeg and Deno
 
-FFmpeg is a free tool that handles saving and converting video files.
+FFmpeg handles video/audio merging. Deno is a JavaScript runtime that `yt-dlp` needs to solve YouTube's download challenges — without it, videos may download in low quality (240p/360p).
 
 - **macOS** — open Terminal and run:
   ```bash
-  brew install ffmpeg
+  brew install ffmpeg deno
   ```
   > Don't have Homebrew? [Install it here](https://brew.sh) first (one command, takes about a minute).
 
 - **Windows** — [download FFmpeg here](https://ffmpeg.org/download.html), unzip it, and add it to your PATH. ([step-by-step guide](https://www.geeksforgeeks.org/how-to-install-ffmpeg-on-windows/))
+  Then install Deno:
+  ```powershell
+  irm https://deno.land/install.ps1 | iex
+  ```
 
 - **Linux (Ubuntu/Debian)** — open a terminal and run:
   ```bash
   sudo apt-get install ffmpeg
+  curl -fsSL https://deno.land/install.sh | sh
   ```
 
 ### Step 3 — Download this project
