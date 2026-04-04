@@ -192,6 +192,9 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         'retries': MAX_RETRIES,
         'fragment_retries': MAX_RETRIES,
         'nocheckcertificate': True,
+        # Allow yt-dlp to fetch JS challenge solver scripts from GitHub.
+        # Without this, YouTube may only serve low-quality (240p/360p) streams.
+        'remote_components': ['ejs:github'],
     }
 
     if not audio_only:
