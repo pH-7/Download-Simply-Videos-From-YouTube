@@ -75,7 +75,7 @@ Click the green **Code** button at the top of this page → **Download ZIP**. Un
 
 ### Step 5 — Set up a sandbox and install libraries
 
-Since Python 3.11, macOS and Linux block global `pip install` ([PEP 668](https://peps.python.org/pep-0668/)) to protect system-managed packages. The solution is to install dependencies inside a **virtual environment**, an isolated sandbox scoped to this project.
+From Python 3.11 onwards, many macOS and Linux systems restrict global `pip install` in system-managed environments ([PEP 668](https://peps.python.org/pep-0668/)). Use a **virtual environment** to install dependencies in an isolated project sandbox.
 
 Run these three commands in order:
 
