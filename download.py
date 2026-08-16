@@ -230,11 +230,15 @@ def download_single_video(
 
         archive_name = '.video_download_archive'
 
+    content_type, _ = get_url_info(url)
+
     downloader_options = {
         'format': format_selector,
 
-        # Do not silently ignore failures
-        'ignoreerrors': False,
+        # For playlists/channels, skip unavailable entries (e.g. removed
+        # videos) instead of aborting the whole batch. Single videos still
+        # fail loudly since there's nothing else to continue past.
+        'ignoreerrors': 'only_download' if content_type in ('playlist', 'channel') else False,
 
         'no_warnings': False,
         'noplaylist': False,
@@ -270,8 +274,6 @@ def download_single_video(
 
     if not audio_only:
         downloader_options['merge_output_format'] = 'mp4'
-
-    content_type, _ = get_url_info(url)
 
     if content_type == 'playlist':
         downloader_options['outtmpl'] = os.path.join(
@@ -359,6 +361,8 @@ def download_single_video(
                         if entry is not None
                     )
 
+                    skipped_count = len(entries) - video_count
+
                     if video_count == 0:
                         raise Exception(
                             "Playlist appears empty or unavailable"
@@ -367,7 +371,8 @@ def download_single_video(
                     print(
                         f"📋 [Thread {thread_id}] "
                         f"{content_type.title()}: "
-                        f"'{title}' ({video_count} videos)"
+                        f"'{title}' ({video_count} videos"
+                        f"{f', {skipped_count} skipped' if skipped_count else ''})"
                     )
 
                     return {
@@ -379,7 +384,8 @@ def download_single_video(
                             f"{content_type.title()} "
                             f"'{title}' download completed! "
                             f"({video_count} "
-                            f"{'MP3s' if audio_only else 'videos'}) "
+                            f"{'MP3s' if audio_only else 'videos'}"
+                            f"{f', {skipped_count} unavailable/skipped' if skipped_count else ''}) "
                             f"📂 Location: {output_path}"
                         )
                     }
