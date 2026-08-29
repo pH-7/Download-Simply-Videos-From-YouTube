@@ -18,6 +18,3 @@ venv/
 
 # OS
 .DS_Store
-
-## Virtual environment ##
-venv/

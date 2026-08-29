@@ -1,5 +1,6 @@
 import sys
 from yt_dlp import YoutubeDL
+from yt_dlp.postprocessor import PostProcessor
 import os
 import re
 import time
@@ -12,6 +13,9 @@ MAX_RETRIES = 3
 RETRY_DELAY = 2
 MAX_CONCURRENT_WORKERS = 5
 DEFAULT_CONCURRENT_WORKERS = 3
+
+# ext4 filesystem limit: filename cannot exceed 255 bytes
+MAX_FILENAME_BYTES = 255
 
 
 @lru_cache(maxsize=128)
@@ -108,6 +112,192 @@ def get_content_type(url: str) -> str:
 
     content_type, _ = get_url_info(url)
     return content_type
+
+
+def _compute_filename_bytes_for_info(
+    info: Dict,
+    ext: str = 'mp4',
+) -> int:
+    """
+    Compute the byte length of the filename that yt-dlp would
+    generate for the given info_dict.
+
+    Accounts for the .part temporary suffix used during download,
+    since the file is first created with .part and then renamed.
+
+    Args:
+        info: yt-dlp info_dict containing title, id, etc.
+        ext: Expected file extension (mp4, mp3, webm, etc.).
+
+    Returns:
+        int: Byte length of the filename (including .part suffix).
+    """
+
+    title = info.get('title', '')
+    video_id = info.get('id', 'x' * 11)
+    playlist_index = info.get('playlist_index')
+    upload_date = info.get('upload_date')
+
+    prefix = ''
+
+    if playlist_index is not None:
+        prefix = f'{playlist_index:03d}-'
+
+    elif upload_date is not None:
+        prefix = f'{upload_date}-'
+
+    # yt-dlp creates .part files during download:
+    #   {prefix}{title} [{id}].{ext}.part
+    filename = f'{prefix}{title} [{video_id}].{ext}.part'
+
+    return len(filename.encode('utf-8'))
+
+
+def _truncate_title_bytes(
+    title: str,
+    max_title_bytes: int,
+) -> str:
+    """
+    Truncate a title string to fit within max_title_bytes,
+    preserving valid UTF-8 sequences.
+
+    Args:
+        title: Original title string.
+        max_title_bytes: Maximum allowed bytes for the title.
+
+    Returns:
+        str: Truncated title.
+    """
+
+    if max_title_bytes <= 0:
+        return ''
+
+    encoded = title.encode('utf-8')
+
+    if len(encoded) <= max_title_bytes:
+        return title
+
+    truncated_encoded = encoded[:max_title_bytes]
+    truncated = truncated_encoded.decode('utf-8', errors='ignore')
+
+    return truncated.rstrip()
+
+
+class FilenameTrimmerPP(PostProcessor):
+    """
+    Custom yt-dlp PostProcessor that truncates video titles BEFORE
+    download so the generated filename fits within ext4's 255-byte
+    limit.
+
+    Must run at 'pre_process' stage (after extraction, before download)
+    so yt-dlp uses the shortened title when expanding outtmpl.
+    """
+
+    def __init__(self, thread_id: int = 0, audio_only: bool = False):
+        super().__init__(None)
+        self._thread_id = thread_id
+        self._ext = 'mp3' if audio_only else 'mp4'
+
+    def run(self, info: Dict) -> Tuple[List[str], Dict]:
+        """
+        Check whether the filename for this video would exceed
+        MAX_FILENAME_BYTES. If so, truncate the title in info_dict
+        so yt-dlp generates a shorter filename.
+
+        Args:
+            info: yt-dlp info_dict (title, id, etc.).
+
+        Returns:
+            Tuple of ([], info_dict).
+        """
+
+        title = info.get('title', '')
+
+        if not title:
+            return [], info
+
+        current_bytes = _compute_filename_bytes_for_info(info, self._ext)
+
+        if current_bytes <= MAX_FILENAME_BYTES:
+            return [], info
+
+        # --- Filename would be too long, truncate the title ---
+        video_id = info.get('id', 'unknown')
+        playlist_index = info.get('playlist_index')
+        upload_date = info.get('upload_date')
+
+        # Calculate fixed overhead (everything except the title)
+        prefix = ''
+
+        if playlist_index is not None:
+            prefix = f'{playlist_index:03d}-'
+
+        elif upload_date is not None:
+            prefix = f'{upload_date}-'
+
+        # Fixed suffix: " [{id}].{ext}.part"
+        fixed_suffix = f' [{video_id}].{self._ext}.part'
+        fixed_bytes = len((prefix + fixed_suffix).encode('utf-8'))
+
+        max_title_bytes = MAX_FILENAME_BYTES - fixed_bytes
+
+        if max_title_bytes <= 0:
+            # Extremely constrained, fall back to video ID
+            new_title = video_id
+
+        else:
+            new_title = _truncate_title_bytes(title, max_title_bytes)
+
+        if new_title == title:
+            return [], info
+
+        # Emit warning in the same style as other warnings in the script
+        print(
+            f'⚠️  [Thread {self._thread_id}] '
+            f'Filename too long ({current_bytes} bytes), '
+            f'truncating title to fit ext4 255-byte limit'
+        )
+
+        display_original = (
+            f'{title}'
+            if len(title) > 80
+            else title
+        )
+
+        print(f'    Original:  {display_original}')
+        print(f'    Truncated: {new_title}')
+
+        # Save the original full title so it can be restored
+        # later for writing to file metadata
+        info['original_title'] = title
+
+        # Modify info_dict in place — yt-dlp uses these fields
+        # when expanding outtmpl to generate the filename
+        info['title'] = new_title
+        info['fulltitle'] = new_title
+
+        return [], info
+
+
+class RestoreTitlePP(PostProcessor):
+    """
+    Custom yt-dlp PostProcessor that restores the original full
+    YouTube title to info_dict before FFmpegMetadata writes it
+    to the output file's metadata.
+
+    Runs after download/merge but before FFmpegMetadata, so the
+    file on disk has the full title in its metadata while the
+    filename remains truncated (ext4-compatible).
+    """
+
+    def run(self, info: Dict) -> Tuple[List[str], Dict]:
+        original_title = info.get('original_title')
+
+        if original_title:
+            info['title'] = original_title
+            info['fulltitle'] = original_title
+
+        return [], info
 
 
 def parse_multiple_urls(input_string: str) -> List[str]:
@@ -334,6 +524,35 @@ def download_single_video(
 
         try:
             with YoutubeDL(downloader_options) as ydl:
+
+                # Register our pre_process PostProcessor to trim
+                # titles before yt-dlp generates filenames
+                ydl.add_post_processor(
+                    FilenameTrimmerPP(
+                        thread_id=thread_id,
+                        audio_only=audio_only,
+                    ),
+                    when='pre_process',
+                )
+
+                # Restore the original full title BEFORE
+                # FFmpegMetadata writes metadata to the file.
+                # Both run in 'post_process' stage; registration
+                # order determines execution order.
+                ydl.add_post_processor(
+                    RestoreTitlePP(),
+                    when='post_process',
+                )
+
+                # Now register FFmpegMetadata — it runs AFTER
+                # RestoreTitlePP, so it sees the full title.
+                from yt_dlp.postprocessor.ffmpeg import (
+                    FFmpegMetadataPP,
+                )
+                ydl.add_post_processor(
+                    FFmpegMetadataPP(ydl),
+                    when='post_process',
+                )
 
                 download_result = ydl.extract_info(
                     url,

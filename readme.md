@@ -10,13 +10,13 @@
 > [!Important]
 > Minimum Python version: **3.10+**. Older versions can be stuck on outdated `yt-dlp` builds and may fail with YouTube `403` errors.
 
-| | |
-|---|---|
-| 🎥 | Download any YouTube video as **MP4** |
-| 🎵 | Download audio-only as **MP3** — great for music and podcasts |
-| 📋 | Download entire **playlists**, each saved in its own numbered folder |
-| 📺 | Download a whole **YouTube channel** |
-| ⚡ | Download **multiple URLs** simultaneously |
+|     |                                                                      |
+| --- | -------------------------------------------------------------------- |
+| 🎥  | Download any YouTube video as **MP4**                                |
+| 🎵  | Download audio-only as **MP3** — great for music and podcasts        |
+| 📋  | Download entire **playlists**, each saved in its own numbered folder |
+| 📺  | Download a whole **YouTube channel**                                 |
+| ⚡  | Download **multiple URLs** simultaneously                            |
 
 ---
 
@@ -46,18 +46,22 @@
 FFmpeg handles video/audio merging. Deno is a JavaScript runtime that `yt-dlp` needs to solve YouTube's download challenges — without it, videos may download in low quality (240p/360p).
 
 - **macOS** — open Terminal and run:
+
   ```bash
   brew install ffmpeg deno
   ```
+
   > Don't have Homebrew? [Install it here](https://brew.sh) first (one command, takes about a minute).
 
 - **Windows** — [download FFmpeg here](https://ffmpeg.org/download.html), unzip it, and add it to your PATH. ([step-by-step guide](https://www.geeksforgeeks.org/how-to-install-ffmpeg-on-windows/))
   Then install Deno:
+
   ```powershell
   irm https://deno.land/install.ps1 | iex
   ```
 
 - **Linux (Ubuntu/Debian)** — open a terminal and run:
+
   ```bash
   sudo apt-get install ffmpeg
   curl -fsSL https://deno.land/install.sh | sh
@@ -80,24 +84,28 @@ From Python 3.11 onwards, many macOS and Linux systems restrict global `pip inst
 Run these three commands in order:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> **Windows:** use `venv\Scripts\activate` instead of `source venv/bin/activate`.
+> **Windows:** use `.venv\Scripts\activate` instead of `source .venv/bin/activate`.
+> **Linux with fish shell:** use `source .venv/bin/activate.fish` instead of `source .venv/bin/activate`.
 
 You'll see `(venv)` appear at the start of your prompt — that means the sandbox is active. That's it — you're ready!
 
-> **Each time you open a new terminal**, run `source venv/bin/activate` (macOS/Linux) or `venv\Scripts\activate` (Windows) before using the script.
+> **Each time you open a new terminal**, run `source .venv/bin/activate` (macOS/Linux) or `.venv\Scripts\activate` (Windows) or `source .venv/bin/activate.fish` (fish shell) before using the script.
 
 ## 🪄 Usage
 
 > **First, make sure your virtual environment is active.** If you see `(venv)` at the start of your terminal prompt, you're good. If not, run:
+>
 > ```bash
-> source venv/bin/activate
+> source .venv/bin/activate
 > ```
-> (Windows: `venv\Scripts\activate`)
+>
+> (Windows: `.venv\Scripts\activate`)
+> (Linux with fish shell: `source .venv/bin/activate.fish`)
 
 In your terminal, run:
 
@@ -161,6 +169,7 @@ You can download multiple playlists at once by separating their URLs with commas
 MP3 mode works with playlists too — all audio files are saved in the same numbered folder structure.
 
 **📁 Example result:**
+
 ```
 downloads/
 ├── My Awesome Playlist/
@@ -182,6 +191,7 @@ Enter YouTube URL(s): https://www.youtube.com/@channelname
 ```
 
 All these URL formats work automatically:
+
 - `https://www.youtube.com/@channelname`
 - `https://www.youtube.com/channel/UCxxxxxxxxx`
 - `https://www.youtube.com/c/channelname`
@@ -194,6 +204,7 @@ MP3 mode works for channels too — useful for music or podcast channels to save
 > **Heads up:** channels with hundreds of videos can take a long time to download. The script paces requests automatically to avoid being blocked by YouTube.
 
 **📁 Channel file structure example:**
+
 ```
 downloads/
 ├── TechChannel/
@@ -228,14 +239,15 @@ If you're comfortable with the command line or want to contribute to the project
    cd Download-Simply-Videos-From-YouTube
    ```
 
-2. **Create a virtual environment** *(keeps this project's packages separate from your system)*
+2. **Create a virtual environment** _(keeps this project's packages separate from your system)_
 
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
+   python3 -m venv .venv
+   source .venv/bin/activate
    ```
 
    > **Windows:** use `venv\Scripts\activate` instead.
+   > **Linus with fish shell:** use `source .venv/bin/activate.fish` instead.
    > Run this activation command again each time you open a new terminal.
 
 3. **Install dependencies**
@@ -269,13 +281,14 @@ Number of concurrent downloads (1-5, default=3): 5
 ### Customise the script
 
 You can edit `download.py` to change:
+
 - Maximum video resolution (currently capped at 1080p)
 - Default output folder
 - Number of retry attempts for failed downloads
 
 ## 👨‍🍳 Who made this?
 
-[![Pierre-Henry Soria](https://s.gravatar.com/avatar/a210fe61253c43c869d71eaed0e90149?s=200)](https://PH7.me 'Pierre-Henry Soria personal website')
+[![Pierre-Henry Soria](https://s.gravatar.com/avatar/a210fe61253c43c869d71eaed0e90149?s=200)](https://PH7.me "Pierre-Henry Soria personal website")
 
 **[Pierre-Henry Soria](https://ph7.me)** — sr software AI engineer, extremely passionate about everything related to automation, content creation, and building simple yet efficient tools that save time 🚀
 
@@ -296,6 +309,7 @@ Fork the repo and submit a pull request.
 This script is for educational purposes only. Before using this script, please **ensure you have the right to download the content and that you comply with YouTube's terms of service**.
 
 <!-- GitHub's Markdown reference links -->
+
 [x-icon]: https://img.shields.io/badge/x-000000?style=for-the-badge&logo=x
 [bsky-icon]: https://img.shields.io/badge/BlueSky-00A8E8?style=for-the-badge&logo=bluesky&logoColor=white
 [github-icon]: https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white
