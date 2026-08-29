@@ -296,8 +296,6 @@ You can edit `download.py` to change:
 
 [![@phenrysay][x-icon]](https://x.com/phenrysay "Follow Me on X") [![pH-7][github-icon]](https://github.com/pH-7 "Follow Me on GitHub") [![YouTube Tech Videos][youtube-icon]](https://www.youtube.com/@pH7Programming "My YouTube Tech Channel") [![BlueSky][bsky-icon]](https://bsky.app/profile/ph7.me "Follow Me on BlueSky")
 
-Forked by [tsctsc6](https://github.com/tsctsc6)
-
 ## 🤝 Contributing
 
 Fork the repo and submit a pull request.
