@@ -267,10 +267,35 @@ class FilenameTrimmerPP(PostProcessor):
         print(f'    Original:  {display_original}')
         print(f'    Truncated: {new_title}')
 
+        # Save the original full title so it can be restored
+        # later for writing to file metadata
+        info['original_title'] = title
+
         # Modify info_dict in place — yt-dlp uses these fields
         # when expanding outtmpl to generate the filename
         info['title'] = new_title
         info['fulltitle'] = new_title
+
+        return [], info
+
+
+class RestoreTitlePP(PostProcessor):
+    """
+    Custom yt-dlp PostProcessor that restores the original full
+    YouTube title to info_dict before FFmpegMetadata writes it
+    to the output file's metadata.
+
+    Runs after download/merge but before FFmpegMetadata, so the
+    file on disk has the full title in its metadata while the
+    filename remains truncated (ext4-compatible).
+    """
+
+    def run(self, info: Dict) -> Tuple[List[str], Dict]:
+        original_title = info.get('original_title')
+
+        if original_title:
+            info['title'] = original_title
+            info['fulltitle'] = original_title
 
         return [], info
 
@@ -508,6 +533,25 @@ def download_single_video(
                         audio_only=audio_only,
                     ),
                     when='pre_process',
+                )
+
+                # Restore the original full title BEFORE
+                # FFmpegMetadata writes metadata to the file.
+                # Both run in 'post_process' stage; registration
+                # order determines execution order.
+                ydl.add_post_processor(
+                    RestoreTitlePP(),
+                    when='post_process',
+                )
+
+                # Now register FFmpegMetadata — it runs AFTER
+                # RestoreTitlePP, so it sees the full title.
+                from yt_dlp.postprocessor.ffmpeg import (
+                    FFmpegMetadataPP,
+                )
+                ydl.add_post_processor(
+                    FFmpegMetadataPP(ydl),
+                    when='post_process',
                 )
 
                 download_result = ydl.extract_info(
