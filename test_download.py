@@ -62,7 +62,6 @@ def _resolve_format(url: str) -> dict:
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
-        "nocheckcertificate": True,
     }
     with YoutubeDL(opts) as ydl:
         info = ydl.extract_info(url, download=False)
@@ -158,8 +157,7 @@ class TestFormatSelectionWithLimit(unittest.TestCase):
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
-            "nocheckcertificate": True,
-        }
+            }
         with YoutubeDL(opts) as ydl:
             cls.info = ydl.extract_info(TEST_URL, download=False)
             selector_fn = ydl.build_format_selector(format_selector_with_limit(cls.max_res))

@@ -260,8 +260,6 @@ def download_single_video(
             archive_name
         ),
 
-        'nocheckcertificate': True,
-
         # Allow yt-dlp to fetch JS challenge solver scripts
         # from GitHub. Without this, YouTube may only serve
         # low-quality streams.
