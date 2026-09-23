@@ -8,6 +8,7 @@ Usage:
 """
 
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -29,6 +30,10 @@ TEST_DOWNLOADS_DIR = os.path.join(os.path.dirname(__file__), "test_downloads")
 # Full-quality selection is verified by TestFormatSelection, which does
 # not download anything.
 TEST_MAX_RESOLUTION = 720
+
+# A short clip for the audio test, so exercising the ffmpeg conversion
+# costs seconds rather than the minutes a full-length video would.
+TEST_AUDIO_URL = "https://www.youtube.com/watch?v=InDJvcWtTCw"
 
 # Default format selector (no resolution limit) - matches download.py
 FORMAT_SELECTOR = "bestvideo+bestaudio/best"
@@ -305,5 +310,68 @@ class TestVideoDownload(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
+# ---------------------------------------------------------------------------
+# Test: audio-only download really produces an MP3 (slow — hits network)
+# ---------------------------------------------------------------------------
+
+class TestAudioDownload(unittest.TestCase):
+    """
+    The MP3 path runs FFmpegExtractAudio, which mocked tests cannot
+    exercise: a broken postprocessor still "succeeds" against a mock.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.output_dir = tempfile.mkdtemp()
+        cls.result = download_single_video(
+            url=TEST_AUDIO_URL,
+            output_path=cls.output_dir,
+            thread_id=0,
+            audio_only=True,
+        )
+        cls.mp3 = next(
+            (
+                os.path.join(cls.output_dir, name)
+                for name in os.listdir(cls.output_dir)
+                if name.endswith('.mp3')
+            ),
+            None,
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.output_dir, ignore_errors=True)
+
+    def test_download_succeeds(self):
+        self.assertTrue(
+            self.result.get('success'),
+            msg=f"Audio download failed: {self.result.get('message')}",
+        )
+
+    def test_mp3_file_is_created(self):
+        self.assertIsNotNone(self.mp3, 'No .mp3 file was produced')
+        self.assertGreater(os.path.getsize(self.mp3), 100 * 1024)
+
+    def test_stream_really_is_mp3(self):
+        """A wrongly-configured postprocessor can leave the original codec."""
+        if not self.mp3:
+            self.skipTest('No file to probe.')
+
+        probe = subprocess.run(
+            [
+                "ffprobe", "-v", "error",
+                "-select_streams", "a:0",
+                "-show_entries", "stream=codec_name",
+                "-of", "csv=p=0",
+                self.mp3,
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        self.assertEqual(probe.stdout.strip(), 'mp3')
+
+
+if __name__ == '__main__':
     unittest.main()
