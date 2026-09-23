@@ -1,15 +1,52 @@
 from yt_dlp import YoutubeDL
 import os
 import re
-from typing import Optional, List
+from typing import Optional, List, Dict, Tuple
 from urllib.parse import urlparse, parse_qs
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
+from functools import lru_cache
+
+
+@lru_cache(maxsize=128)
+def get_url_info(url: str) -> Tuple[bool, Dict]:
+    """
+    Get URL information with caching to avoid duplicate yt-dlp calls.
+    Returns (is_playlist, info_dict) for efficient reuse.
+
+    Args:
+        url (str): YouTube URL to analyze
+
+    Returns:
+        Tuple[bool, Dict]: (is_playlist, info_dict)
+    """
+    try:
+        # Use yt-dlp to extract info without downloading
+        ydl_opts = {
+            'quiet': True,
+            'extract_flat': True,  # Only extract basic info, faster
+            'no_warnings': True,
+            'skip_download': True,
+            'playlist_items': '1',  # Only check first item for speed
+        }
+
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            is_playlist = info.get('_type') == 'playlist'
+            return is_playlist, info
+
+    except Exception:
+        # If extraction fails, fall back to basic URL parsing as last resort
+        # This covers cases where URLs are malformed or network issues occur
+        parsed_url = urlparse(url)
+        query_params = parse_qs(parsed_url.query)
+        is_playlist = 'list' in query_params or '/playlist' in parsed_url.path
+        return is_playlist, {}
 
 
 def is_playlist_url(url: str) -> bool:
     """
-    Check if the provided URL is a playlist or a single video.
+    Check if the provided URL is a playlist or a single video using cached detection.
+    This approach is more robust than URL parsing and adapts to YouTube format changes.
 
     Args:
         url (str): YouTube URL to check
@@ -17,9 +54,8 @@ def is_playlist_url(url: str) -> bool:
     Returns:
         bool: True if URL is a playlist, False if single video
     """
-    parsed_url = urlparse(url)
-    query_params = parse_qs(parsed_url.query)
-    return 'list' in query_params
+    is_playlist, _ = get_url_info(url)
+    return is_playlist
 
 
 def parse_multiple_urls(input_string: str) -> List[str]:
@@ -117,7 +153,8 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
     }
 
     # Set different output templates for playlists and single videos
-    if is_playlist_url(url):
+    is_playlist, cached_info = get_url_info(url)
+    if is_playlist:
         ydl_opts['outtmpl'] = os.path.join(
             output_path, '%(playlist_title)s', '%(playlist_index)s-%(title)s.%(ext)s')
         print(
@@ -129,7 +166,8 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
-            # Extract info first to get playlist details
+            # Always extract fresh info for download - cached info is only for detection
+            # We need full metadata for download, not just the basic flat extraction
             info = ydl.extract_info(url, download=False)
 
             if '_type' in info and info['_type'] == 'playlist':
@@ -138,6 +176,14 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
                 print(
                     f"📋 [Thread {thread_id}] Playlist: '{playlist_title}' ({video_count} videos)")
 
+                # Ensure we have entries to download
+                if video_count == 0:
+                    return {
+                        'url': url,
+                        'success': False,
+                        'message': f"❌ [Thread {thread_id}] Playlist appears to be empty or private"
+                    }
+
             # Download content
             ydl.download([url])
 
@@ -145,7 +191,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
                 return {
                     'url': url,
                     'success': True,
-                    'message': f"✅ [Thread {thread_id}] Playlist download completed! ({video_count} videos)"
+                    'message': f"✅ [Thread {thread_id}] Playlist '{playlist_title}' download completed! ({video_count} videos)"
                 }
             else:
                 return {
@@ -190,6 +236,18 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     print(
         f"\n🚀 Starting download of {len(urls)} URL(s) with {max_workers} concurrent workers...")
     print(f"📁 Output directory: {output_path}")
+
+    # Show what types of content we're downloading
+    playlist_count = sum(1 for url in urls if is_playlist_url(url))
+    video_count = len(urls) - playlist_count
+    if playlist_count > 0 and video_count > 0:
+        print(
+            f"📋 Content: {playlist_count} playlist(s) + {video_count} video(s)")
+    elif playlist_count > 0:
+        print(f"📋 Content: {playlist_count} playlist(s)")
+    else:
+        print(f"🎥 Content: {video_count} video(s)")
+
     print("-" * 60)
 
     # Download videos concurrently
