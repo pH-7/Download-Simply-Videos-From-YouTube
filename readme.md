@@ -403,7 +403,7 @@ Contributions to this project are welcome. Please fork the repository and submit
 
 ## ⚠️ Disclaimer
 
-This script is for educational purposes only. Please ensure you have the right to download any content and comply with YouTube's terms of service when using this script.
+This script is for educational purposes only. Before using this script, please **ensure you have the right to download the content and that you comply with YouTube's terms of service**.
 
 <!-- GitHub's Markdown reference links -->
 [x-icon]: https://img.shields.io/badge/x-000000?style=for-the-badge&logo=x
