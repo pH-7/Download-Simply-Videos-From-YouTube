@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 
 from download import (
     count_archived_entries,
+    extract_video_id,
     download_single_video,
     download_youtube_content,
 )
@@ -280,6 +281,67 @@ class TestBatchSurvivesUnexpectedWorkerError(unittest.TestCase):
         self.assertIn('Successful downloads: 1 file', summary)
         self.assertIn('Failed downloads: 1 URL', summary)
         self.assertIn('unexpected worker failure', summary)
+
+
+class TestExtractVideoId(unittest.TestCase):
+
+    def test_reads_each_single_video_url_form(self):
+        cases = {
+            'https://www.youtube.com/watch?v=abc12345678': 'abc12345678',
+            'https://youtu.be/abc12345678': 'abc12345678',
+            'https://www.youtube.com/shorts/abc12345678': 'abc12345678',
+            'https://www.youtube.com/embed/abc12345678': 'abc12345678',
+            'https://www.youtube.com/live/abc12345678': 'abc12345678',
+            'https://www.youtube.com/watch?v=abc12345678&t=42': 'abc12345678',
+        }
+
+        for url, expected in cases.items():
+            with self.subTest(url=url):
+                self.assertEqual(extract_video_id(url), expected)
+
+    def test_returns_none_when_there_is_no_video_id(self):
+        for url in (
+            'https://www.youtube.com/playlist?list=PL123',
+            'https://www.youtube.com/@somechannel',
+        ):
+            with self.subTest(url=url):
+                self.assertIsNone(extract_video_id(url))
+
+
+class TestArchiveSkipWithoutInfoDict(unittest.TestCase):
+    """
+    get_url_info falls back to an empty dict when extraction fails or
+    returns nothing. An already-downloaded video must still be recognised
+    as a skip then, rather than retried and reported as a failure.
+    """
+
+    def _run(self, archive_line):
+        with tempfile.TemporaryDirectory() as output_path:
+            Path(output_path, '.video_download_archive').write_text(archive_line)
+
+            with patch('download.get_url_info', return_value=('video', {})), \
+                    patch('download.time.sleep'), \
+                    patch('download.YoutubeDL.extract_info', return_value=None) as extract_info:
+                result = download_single_video(
+                    'https://youtu.be/archivedvid',
+                    output_path,
+                )
+
+            return result, extract_info
+
+    def test_archived_video_is_skipped_without_a_lookup(self):
+        result, extract_info = self._run('youtube archivedvid\n')
+
+        self.assertTrue(result['success'])
+        self.assertTrue(result['skipped'])
+        self.assertIn('already downloaded', result['message'])
+        extract_info.assert_not_called()
+
+    def test_unarchived_video_still_fails(self):
+        result, extract_info = self._run('youtube somethingelse\n')
+
+        self.assertFalse(result['success'])
+        self.assertTrue(extract_info.called)
 
 
 if __name__ == '__main__':
