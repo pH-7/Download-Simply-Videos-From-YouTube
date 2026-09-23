@@ -238,5 +238,49 @@ class TestCountArchivedEntries(unittest.TestCase):
             self.assertEqual(count_archived_entries('https://x', ydl), 0)
 
 
+class TestBatchSurvivesUnexpectedWorkerError(unittest.TestCase):
+    """
+    download_single_video catches its own failures, but if a worker ever
+    raises anything it does not handle, that must not discard the results
+    of every other URL already finished in the batch.
+    """
+
+    @patch('download.get_content_type', return_value='video')
+    def test_one_crashing_url_does_not_lose_the_others(self, get_content_type):
+        good = {
+            'url': 'https://www.youtube.com/watch?v=good',
+            'success': True,
+            'count': 1,
+            'message': 'ok',
+        }
+
+        def side_effect(url, *args, **kwargs):
+            if 'boom' in url:
+                raise RuntimeError('unexpected worker failure')
+            return good
+
+        output = io.StringIO()
+
+        with patch('download.download_single_video', side_effect=side_effect):
+            with tempfile.TemporaryDirectory() as output_path:
+                with redirect_stdout(output):
+                    download_youtube_content(
+                        [
+                            'https://www.youtube.com/watch?v=good',
+                            'https://www.youtube.com/watch?v=boom',
+                        ],
+                        output_path=output_path,
+                        max_workers=1,
+                    )
+
+        summary = output.getvalue()
+
+        # The successful URL is still reported, and the crash is surfaced
+        # as a failure rather than taking the whole run down.
+        self.assertIn('Successful downloads: 1 file', summary)
+        self.assertIn('Failed downloads: 1 URL', summary)
+        self.assertIn('unexpected worker failure', summary)
+
+
 if __name__ == '__main__':
     unittest.main()
