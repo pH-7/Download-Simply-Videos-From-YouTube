@@ -125,7 +125,7 @@ class TestDownloadArchiveHandling(unittest.TestCase):
 
         summary = output.getvalue()
         self.assertIn('Successful downloads: 0 files', summary)
-        self.assertIn('Failed downloads: 0 files', summary)
+        self.assertIn('Failed downloads: 0 URLs', summary)
         self.assertIn('Already downloaded: 1 item skipped', summary)
         self.assertIn('No new downloads needed', summary)
 
@@ -153,7 +153,7 @@ class TestDownloadArchiveHandling(unittest.TestCase):
                     max_workers=1,
                 )
 
-        self.assertIn('Failed downloads: 1 file', output.getvalue())
+        self.assertIn('Failed downloads: 1 URL', output.getvalue())
 
 
 class TestArchivedPlaylistHandling(unittest.TestCase):
