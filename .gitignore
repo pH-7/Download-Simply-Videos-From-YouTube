@@ -1,3 +1,6 @@
+downloads/*
+!downloads/.gitkeep
+
 ## IDE - PyCharm ##
 .idea
 
