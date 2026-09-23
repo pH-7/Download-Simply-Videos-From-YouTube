@@ -271,7 +271,7 @@ def download_single_video(
     if not audio_only:
         downloader_options['merge_output_format'] = 'mp4'
 
-    content_type, _ = get_url_info(url)
+    content_type, content_info = get_url_info(url)
 
     if content_type == 'playlist':
         downloader_options['outtmpl'] = os.path.join(
@@ -334,6 +334,28 @@ def download_single_video(
 
         try:
             with YoutubeDL(downloader_options) as ydl:
+
+                # yt-dlp returns None when it recognizes a single video in
+                # the download archive. Treat that as an intentional skip,
+                # rather than retrying it as an extraction failure.
+                if (
+                    content_type == 'video' and
+                    content_info and
+                    ydl.in_download_archive(content_info)
+                ):
+                    title = content_info.get('title', content_info.get('id'))
+
+                    return {
+                        'url': url,
+                        'success': True,
+                        'count': 0,
+                        'skipped': True,
+                        'message': (
+                            f"⏭️  [Thread {thread_id}] "
+                            f"Video '{title}' was already downloaded. "
+                            f"Skipping it because it is in the archive."
+                        )
+                    }
 
                 download_result = ydl.extract_info(
                     url,
@@ -560,15 +582,22 @@ def download_youtube_content(
         if not r['success']
     ]
 
+    skipped_downloads = [
+        r for r in successful_downloads
+        if r.get('skipped')
+    ]
+
     total_successful_count = sum(
         r.get('count', 1)
         for r in successful_downloads
     )
 
     total_failed_count = sum(
-        r.get('count', 1)
+        max(1, r.get('count', 0))
         for r in failed_downloads
     )
+
+    total_skipped_count = len(skipped_downloads)
 
     print(
         f"✅ Successful downloads: "
@@ -582,6 +611,13 @@ def download_youtube_content(
         f"{'files' if total_failed_count != 1 else 'file'}"
     )
 
+    if total_skipped_count:
+        print(
+            f"⏭️  Already downloaded: "
+            f"{total_skipped_count} "
+            f"{'items' if total_skipped_count != 1 else 'item'} skipped"
+        )
+
     if failed_downloads:
 
         print("\n❌ Failed URLs:")
@@ -590,8 +626,11 @@ def download_youtube_content(
             print(f"   • {result['url']}")
             print(f"     Reason: {result['message']}")
 
-    if successful_downloads:
+    if total_successful_count:
         print(f"\n🎉 All files saved to: {output_path}")
+
+    elif skipped_downloads and not failed_downloads:
+        print("\n✅ No new downloads needed; all items were already downloaded.")
 
 
 if __name__ == "__main__":
