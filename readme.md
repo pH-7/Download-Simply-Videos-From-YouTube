@@ -268,6 +268,18 @@ You can modify the following in the script:
 - Post-processing options
 - Retry attempts for failed downloads
 
+## 🧹 Optional: Clean Up Incomplete Downloads
+
+If you ever experience interrupted downloads (e.g., due to network issues or stopping the script), you may find leftover `.part` or `.ytdl` files in your `downloads/` folder. These are incomplete files and can be safely removed.
+
+A utility script, `cleanup_downloads.py`, is included to help you quickly clean up these incomplete files:
+
+```bash
+python cleanup_downloads.py
+```
+
+This will scan your `downloads/` directory and remove any partial or temporary files, leaving only your completed videos and audio files. Most users will not need this, but it's handy for keeping your downloads folder tidy after interruptions.
+
 ## 👨‍🍳 Who cooked this?
 
 [![Pierre-Henry Soria](https://s.gravatar.com/avatar/a210fe61253c43c869d71eaed0e90149?s=200)](https://PH7.me 'Pierre-Henry Soria personal website')
