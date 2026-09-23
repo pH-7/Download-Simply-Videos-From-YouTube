@@ -37,29 +37,39 @@ This powerful Python script downloads YouTube content in the highest available q
 * FFmpeg installed on your system 🎬
 * YouTube URLs (videos, playlists, or channels) that you have permission to download 📝
 
+
 ## 📦 Installation
 
-1. Clone this repository:
-   ```console
-   git clone https://github.com/pH-7/Download-Simply-Videos-From-YouTube.git && cd Download-Simply-Videos-From-YouTube
+Open a terminal in the project folder, then follow these steps:
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/pH-7/Download-Simply-Videos-From-YouTube.git
+   cd Download-Simply-Videos-From-YouTube
    ```
 
-2. Install the required Python packages:
-   ```console
+2. **Install Python dependencies**
+
+   ```bash
    pip install -r requirements.txt
    ```
 
-3. Install FFmpeg:
-   - **macOS:**
-     ```console
+3. **Install FFmpeg**
+
+   * **macOS**
+
+     ```bash
      brew install ffmpeg
      ```
-   - **Ubuntu/Debian:**
-     ```console
+   * **Ubuntu/Debian**
+
+     ```bash
      sudo apt-get install ffmpeg
      ```
-   - **Windows:**
-      Download from the [FFmpeg website](https://ffmpeg.org/download.html), follow the instructions and add to PATH
+   * **Windows**
+     Download FFmpeg from the [official website](https://ffmpeg.org/download.html), follow the installation guide, and add it to your `PATH`.
+    Download from the [FFmpeg website](https://ffmpeg.org/download.html), follow the instructions and add to PATH
 
 ## 🪄 Usage
 
@@ -68,7 +78,7 @@ This powerful Python script downloads YouTube content in the highest available q
 To run the script, use the following command:
 
 ```console
-python download.py
+python download.py # python3 download.py
 ```
 
 ### Single Video Download
