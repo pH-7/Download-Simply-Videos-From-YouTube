@@ -358,12 +358,12 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     print(f"❌ Failed downloads: {len(failed_downloads)}")
 
     if failed_downloads:
-        print("\n❌ Failed URLs:")
-        for result in failed:
-            print(f"   • {result['url']}")
-            print(f"     Reason: {result['message']}")
+    print("\n❌ Failed URLs:")
+    for result in failed_downloads:
+        print(f"   • {result['url']}")
+        print(f"     Reason: {result['message']}")
 
-    if successful:
+    if successful_downloads:
         print(f"\n🎉 All files saved to: {output_path}")
 
 
