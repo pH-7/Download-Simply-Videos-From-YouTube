@@ -112,6 +112,8 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
         'clean_infojson': True,
         'retries': 3,
         'fragment_retries': 3,
+        # Ensure playlists are fully downloaded
+        'noplaylist': False,  # Allow playlist downloads
     }
 
     # Set different output templates for playlists and single videos
@@ -127,13 +129,30 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
+            # Extract info first to get playlist details
+            info = ydl.extract_info(url, download=False)
+
+            if '_type' in info and info['_type'] == 'playlist':
+                playlist_title = info.get('title', 'Unknown Playlist')
+                video_count = len(info.get('entries', []))
+                print(
+                    f"📋 [Thread {thread_id}] Playlist: '{playlist_title}' ({video_count} videos)")
+
             # Download content
             ydl.download([url])
-            return {
-                'url': url,
-                'success': True,
-                'message': f"✅ [Thread {thread_id}] Download completed successfully!"
-            }
+
+            if '_type' in info and info['_type'] == 'playlist':
+                return {
+                    'url': url,
+                    'success': True,
+                    'message': f"✅ [Thread {thread_id}] Playlist download completed! ({video_count} videos)"
+                }
+            else:
+                return {
+                    'url': url,
+                    'success': True,
+                    'message': f"✅ [Thread {thread_id}] Video download completed successfully!"
+                }
 
     except Exception as e:
         return {
