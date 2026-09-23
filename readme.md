@@ -1,10 +1,10 @@
 # 📥 Download Any Videos From YouTube
 
-**High-Quality YouTube Video & Playlist Downloads with This Powerful Python Script! 🎥**
+**High-Quality YouTube Video & Playlist Downloader 🎥**
 
 ![Demo. Download any YouTube videos and YouTube playlists](promo-assets/demo-download-youtube-videos-script.gif)
 
-This python program not only downloads YouTube content in the highest available quality but also handles multiple formats, subtitles, and thumbnails efficiently. Perfect for content creators and educational purposes! 
+This python script not only downloads YouTube content in the highest available quality but also handles multiple formats, subtitles, and thumbnails efficiently. Perfect for content creators and educational purposes! 
 
 - [⚙️ Requirements](#%EF%B8%8F-requirements)
 - [📦 Installation](#-installation)
