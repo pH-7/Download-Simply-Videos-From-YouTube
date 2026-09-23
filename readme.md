@@ -24,7 +24,7 @@
 - [🧹 Clean Up Incomplete Downloads](#-optional-clean-up-incomplete-downloads)
 - [📦 Full Setup (for developers)](#-full-setup-for-developers)
 - [🛠️ Advanced Options](#-advanced-options)
-- [👨‍🍳 Who made this?](#-who-cooked-this)
+- [👨‍🍳 Who made this?](#-who-made-this)
 - [🤝 Contributing](#-contributing)
 - [⚖️ License](#-license)
 
@@ -200,7 +200,7 @@ downloads/
 If a download was interrupted (e.g. you lost internet or closed the terminal), some unfinished files may be left in the `downloads/` folder. To remove them, run:
 
 ```bash
-python cleanup_downloads.py # python3 cleanup_downloads.py
+python3 cleanup_downloads.py
 ```
 
 This only deletes incomplete files (`.part`, `.ytdl`, temp fragments) — your finished downloads are untouched. No need to activate the virtual environment for this; it uses no external dependencies. Most people will never need this.
@@ -263,13 +263,13 @@ You can edit `download.py` to change:
 - Default output folder
 - Number of retry attempts for failed downloads
 
-## 👨‍🍳 Who cooked this?
+## 👨‍🍳 Who made this?
 
 [![Pierre-Henry Soria](https://s.gravatar.com/avatar/a210fe61253c43c869d71eaed0e90149?s=200)](https://PH7.me 'Pierre-Henry Soria personal website')
 
-**Pierre-Henry Soria**. A passionate **software AI engineer** who loves automating content creation! 🚀 Enthusiast for YouTube, photography, AI, learning, and health! 😊 Find me at [pH7.me](https://ph7.me) 🚀
+**[Pierre-Henry Soria](https://ph7.me)** — software AI engineer, passionate about automation, content creation, and building tools that save time.
 
-☕️ Do you enjoy this project? **[Offer me a coffee](https://ko-fi.com/phenry)** (spoiler alert: I love almond flat white! 😋)
+☕️ **[Buy me a coffee](https://ko-fi.com/phenry)** if this saved you some time!
 
 [![@phenrysay][x-icon]](https://x.com/phenrysay "Follow Me on X") [![pH-7][github-icon]](https://github.com/pH-7 "Follow Me on GitHub") [![YouTube Tech Videos][youtube-icon]](https://www.youtube.com/@pH7Programming "My YouTube Tech Channel") [![BlueSky][bsky-icon]](https://bsky.app/profile/ph7.me "Follow Me on BlueSky")
 
@@ -279,7 +279,7 @@ Fork the repo and submit a pull request.
 
 ## ⚖️ License
 
-**Download Simply Videos From YouTube** is generously distributed under the *[MIT License](https://opensource.org/licenses/MIT)* 🎉 Enjoy!
+[MIT License](https://opensource.org/licenses/MIT)
 
 ## ⚠️ Disclaimer
 
