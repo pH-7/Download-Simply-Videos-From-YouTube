@@ -2,7 +2,9 @@
 
 **A powerful Python script for downloading high-quality YouTube videos and playlists with ease! 🎥⚡**
 
-This program not only downloads YouTube content in the highest available quality but also handles multiple formats, subtitles, and thumbnails efficiently. Perfect for content creators and educational purposes! 
+![Demo. Download any YouTube videos and YouTube playlists](promo-assets/sample.png)
+
+This python program not only downloads YouTube content in the highest available quality but also handles multiple formats, subtitles, and thumbnails efficiently. Perfect for content creators and educational purposes! 
 
 - [⚙️ Requirements](#%EF%B8%8F-requirements)
 - [📦 Installation](#-installation)
