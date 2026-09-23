@@ -1,13 +1,28 @@
 from yt_dlp import YoutubeDL
 import os
 from typing import Optional
+from urllib.parse import urlparse, parse_qs
 
-def download_playlist(playlist_url: str, output_path: Optional[str] = None) -> None:
+def is_playlist_url(url: str) -> bool:
     """
-    Download a YouTube playlist in high quality.
+    Check if the provided URL is a playlist or a single video.
     
     Args:
-        playlist_url (str): URL of the YouTube playlist
+        url (str): YouTube URL to check
+        
+    Returns:
+        bool: True if URL is a playlist, False if single video
+    """
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+    return 'list' in query_params
+
+def download_youtube_content(url: str, output_path: Optional[str] = None) -> None:
+    """
+    Download YouTube content (single video or playlist) in high quality.
+    
+    Args:
+        url (str): URL of the YouTube video or playlist
         output_path (str, optional): Directory to save the downloads. Defaults to './downloads'
     """
     # Set default output path if none provided
@@ -20,7 +35,6 @@ def download_playlist(playlist_url: str, output_path: Optional[str] = None) -> N
     # Configure yt-dlp options
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',  # Prefer high quality MP4
-        'outtmpl': os.path.join(output_path, '%(playlist_title)s', '%(playlist_index)s-%(title)s.%(ext)s'),
         'ignoreerrors': True,  # Skip unavailable videos
         'nocheckcertificate': True,
         'geo_bypass': True,
@@ -37,10 +51,18 @@ def download_playlist(playlist_url: str, output_path: Optional[str] = None) -> N
         }],
     }
     
+    # Set different output templates for playlists and single videos
+    if is_playlist_url(url):
+        ydl_opts['outtmpl'] = os.path.join(output_path, '%(playlist_title)s', '%(playlist_index)s-%(title)s.%(ext)s')
+        print("Detected playlist URL. Downloading entire playlist...")
+    else:
+        ydl_opts['outtmpl'] = os.path.join(output_path, '%(title)s.%(ext)s')
+        print("Detected single video URL. Downloading video...")
+    
     try:
         with YoutubeDL(ydl_opts) as ydl:
-            # Download playlist
-            ydl.download([playlist_url])
+            # Download content
+            ydl.download([url])
             print(f"\nDownload completed successfully! Files saved to: {output_path}")
             
     except Exception as e:
@@ -48,10 +70,10 @@ def download_playlist(playlist_url: str, output_path: Optional[str] = None) -> N
 
 if __name__ == "__main__":
     # Example usage
-    playlist_url = input("Enter the YouTube playlist URL: ")
+    url = input("Enter the YouTube URL (video or playlist): ")
     output_dir = input("Enter output directory (press Enter for default): ").strip()
     
     if output_dir:
-        download_playlist(playlist_url, output_dir)
+        download_youtube_content(url, output_dir)
     else:
-        download_playlist(playlist_url)
+        download_youtube_content(url)
