@@ -179,7 +179,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         file_extension = 'mp4'
         postprocessors = [{
             'key': 'FFmpegVideoConvertor',
-            'preferredformat': 'mp4',
+            'preferedformat': 'mp4',
         }]
 
     downloader_options = {
@@ -389,7 +389,7 @@ if __name__ == "__main__":
         print("   🔸 Multi-line: Press Enter without typing, then one URL per line")
         print()
         print("🎯 SUPPORTED CONTENT TYPES:")
-        print("   📹 Single Videos: https://www.youtube.com/watch?v=...")
+        print("   📹 Single Videos: https://www.youtube.com/watch?v=K3SR37pIzVs")
         print("   📋 Playlists: https://www.youtube.com/playlist?list=...")
         print("   📺 Channels: https://www.youtube.com/@channelname")
         print("   📺 Channels: https://www.youtube.com/channel/UC...")
