@@ -15,7 +15,6 @@ import unittest
 from yt_dlp import YoutubeDL
 
 from download import (
-    YOUTUBE_PLAYER_CLIENTS,
     download_single_video,
 )
 
@@ -63,13 +62,6 @@ def _resolve_format(url: str) -> dict:
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
-        "extractor_args": {
-            "youtube": {
-                "player_client": YOUTUBE_PLAYER_CLIENTS,
-                # player_skip intentionally omitted — it prevents adaptive
-                # (separate video+audio) streams from being discovered
-            }
-        },
         "nocheckcertificate": True,
     }
     with YoutubeDL(opts) as ydl:
@@ -166,11 +158,6 @@ class TestFormatSelectionWithLimit(unittest.TestCase):
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": YOUTUBE_PLAYER_CLIENTS,
-                }
-            },
             "nocheckcertificate": True,
         }
         with YoutubeDL(opts) as ydl:

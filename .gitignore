@@ -1,8 +1,20 @@
+# Downloaded files
 downloads/*
 !downloads/.gitkeep
+test_downloads/
 
-## IDE - PyCharm ##
-.idea
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 
-## Misc files ##
+# Virtual environment
+venv/
+.venv/
+
+# IDE
+.idea/
+
+# OS
 .DS_Store
