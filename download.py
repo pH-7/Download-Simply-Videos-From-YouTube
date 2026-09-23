@@ -253,6 +253,38 @@ class FilenameLengthLimiter(PostProcessor):
         return [], info
 
 
+def extract_video_id(url: str) -> Optional[str]:
+    """
+    Pull the video id out of a YouTube URL without a network request.
+
+    Used when a lookup has already failed and the URL is all that is left
+    to identify the video by, such as when checking the download archive.
+
+    Args:
+        url (str): YouTube URL
+
+    Returns:
+        Optional[str]: The video id, or None if the URL carries none
+    """
+
+    parsed = urlparse(url)
+
+    if 'youtu.be' in parsed.netloc:
+        return parsed.path.lstrip('/').split('/')[0] or None
+
+    query_id = parse_qs(parsed.query).get('v', [None])[0]
+
+    if query_id:
+        return query_id
+
+    match = re.match(
+        r'/(?:shorts|embed|live|v)/([^/?#]+)',
+        parsed.path
+    )
+
+    return match.group(1) if match else None
+
+
 def parse_multiple_urls(input_string: str) -> List[str]:
     """
     Parse multiple URLs from input string separated by commas,
@@ -375,6 +407,18 @@ def download_single_video(
 
     content_type, content_info = get_url_info(url)
 
+    # get_url_info falls back to an empty dict when extraction fails or
+    # returns nothing. The archive is still keyed on the video id, which
+    # the URL carries, so derive it rather than losing the skip.
+    archive_info = content_info
+
+    if content_type == 'video' and not (content_info or {}).get('id'):
+
+        fallback_id = extract_video_id(url)
+
+        if fallback_id:
+            archive_info = {'id': fallback_id, 'url': url}
+
     downloader_options = {
         'format': format_selector,
 
@@ -488,10 +532,13 @@ def download_single_video(
                 # rather than retrying it as an extraction failure.
                 if (
                     content_type == 'video' and
-                    content_info and
-                    ydl.in_download_archive(content_info)
+                    archive_info and
+                    ydl.in_download_archive(archive_info)
                 ):
-                    title = content_info.get('title', content_info.get('id'))
+                    title = archive_info.get(
+                        'title',
+                        archive_info.get('id')
+                    )
 
                     return {
                         'url': url,
