@@ -661,10 +661,8 @@ def download_youtube_content(
         for r in successful_downloads
     )
 
-    total_failed_count = sum(
-        max(1, r.get('count', 0))
-        for r in failed_downloads
-    )
+    # A failed result carries no file count, so this is a URL count
+    total_failed_count = len(failed_downloads)
 
     total_skipped_count = len(skipped_downloads)
 
@@ -677,7 +675,7 @@ def download_youtube_content(
     print(
         f"❌ Failed downloads: "
         f"{total_failed_count} "
-        f"{'files' if total_failed_count != 1 else 'file'}"
+        f"{'URLs' if total_failed_count != 1 else 'URL'}"
     )
 
     if total_skipped_count:
@@ -695,7 +693,10 @@ def download_youtube_content(
             print(f"   • {result['url']}")
             print(f"     Reason: {result['message']}")
 
-    if total_successful_count:
+    if total_successful_count and failed_downloads:
+        print(f"\n📂 Downloaded files saved to: {output_path}")
+
+    elif total_successful_count:
         print(f"\n🎉 All files saved to: {output_path}")
 
     elif skipped_downloads and not failed_downloads:
@@ -721,7 +722,7 @@ if __name__ == "__main__":
     else:
 
         print("📥 YouTube Multi-Content Downloader")
-        print("=" * 50)
+        print("=" * 60)
 
         print("💡 SUPPORTED INPUT FORMATS:")
         print("   🔸 Single URL: Just paste one YouTube URL")
@@ -738,9 +739,8 @@ if __name__ == "__main__":
         print("   📺 Channels: https://www.youtube.com/channel/UC...")
         print("   📺 Channels: https://www.youtube.com/c/channelname")
         print("   📺 Channels: https://www.youtube.com/user/username")
-        print("   📺 Channels: https://www.youtube.com/user/username")
 
-        print("-" * 50)
+        print("-" * 60)
 
         user_input = input("Enter YouTube URL(s): ")
 
@@ -839,9 +839,18 @@ if __name__ == "__main__":
 
             if max_resolution:
                 print(f"📺 Selected: Max {max_resolution}p")
+
+            elif resolution_choice in ('', '1'):
+                # Enter or 1 are both the documented default
+                print("📺 Selected: Best available quality")
+
             else:
                 # Yellow text for fallback warning
-                print("\033[93m⚠️  Invalid input. Falling back to: Best available quality\033[0m")
+                print(
+                    f"\033[93m⚠️  Unrecognised choice "
+                    f"'{resolution_choice}'. Falling back to: "
+                    f"Best available quality\033[0m"
+                )
 
         max_workers = 1
 
