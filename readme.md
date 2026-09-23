@@ -74,13 +74,13 @@ You can modify the following in the script:
 - Output directory structure
 - Post-processing options
 
-## 👨‍🍳 Who created this?
+## 👨‍🍳 Who cooked this?
 
 [![Pierre-Henry Soria](https://s.gravatar.com/avatar/a210fe61253c43c869d71eaed0e90149?s=200)](https://PH7.me 'Pierre-Henry Soria personal website')
 
-**Pierre-Henry Soria**. A passionate developer who loves automating content creation! 🚀 Enthusiast for YouTube, AI, and writing! 😊 Find me at [PH7.me](https://PH7.me) 💫
+**Pierre-Henry Soria**. A passionate **software AI engineer** who loves automating content creation! 🚀 Enthusiast for YouTube, photography, AI, learning, and health! 😊 Find me at [pH7.me](https://ph7.me) 🚀
 
-☕️ Enjoying this project? **[Offer me a coffee](https://ko-fi.com/phenry)** (I love almond flat white 😋)
+☕️ D you enjoy this project? **[Offer me a coffee](https://ko-fi.com/phenry)** (spoiler alert: I love almond flat white! 😋)
 
 [![@phenrysay][twitter-icon]](https://x.com/phenrysay) [![pH-7][github-icon]](https://github.com/pH-7) [![YouTube Tech Videos][youtube-icon]](https://www.youtube.com/@pH7Programming "My YouTube Tech Channel")
 
