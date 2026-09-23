@@ -45,7 +45,7 @@ This program not only downloads YouTube content in the highest available quality
 To run the script, use the following command:
 
 ```console
-python download_playlist.py
+python download.py
 ```
 
 **The script will:**
