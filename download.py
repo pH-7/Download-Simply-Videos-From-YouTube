@@ -231,7 +231,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
 
                 if download_result.get('_type') == 'playlist':
                     title = download_result.get('title', 'Unknown Playlist')
-                    video_count = len(download_result.get('entries', []))
+                    video_count = sum(1 for e in download_result.get('entries', []) if e is not None)
                     print(f"📋 [Thread {thread_id}] {content_type.title()}: '{title}' ({video_count} videos)")
 
                     if video_count == 0:
@@ -306,7 +306,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     os.makedirs(output_path, exist_ok=True)
 
     print(
-        f"\n🚀 Starting download of {len(urls)} URL(s) with {max_workers} concurrent workers...")
+        f"\n🚀 Starting download of {len(urls)} URL(s) with {max_workers} concurrent {'worker' if max_workers == 1 else 'workers'}...")
     print(f"📁 Output directory: {output_path}")
     if audio_only:
         print("🎧 Format: MP3 Audio Only")
@@ -411,13 +411,13 @@ if __name__ == "__main__":
 
         if not user_input.strip():
             print("❌ No URLs entered. Exiting...")
-            exit(1)
+            sys.exit(1)
 
         urls = parse_multiple_urls(user_input)
 
         if not urls:
             print("❌ No valid YouTube URLs found. Please try again.")
-            exit(1)
+            sys.exit(1)
 
         print(f"\n✅ Found {len(urls)} valid URL(s)")
         for i, url in enumerate(urls, 1):
