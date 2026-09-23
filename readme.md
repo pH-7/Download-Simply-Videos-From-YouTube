@@ -1,6 +1,6 @@
 # 📥 Download Any Videos From YouTube
 
-**A powerful Python script for downloading high-quality YouTube videos and playlists with ease! 🎥⚡**
+**High-Quality YouTube Video & Playlist Downloads with This Powerful Python Script! 🎥**
 
 ![Demo. Download any YouTube videos and YouTube playlists](promo-assets/demo-download-youtube-videos-script.gif)
 
