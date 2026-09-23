@@ -4,7 +4,11 @@
 
 ![Demo. Download any YouTube videos and YouTube playlists](promo-assets/demo-download-youtube-videos-script.gif)
 
-> 🚀 **The Ultimate YouTube Downloader** - Download single videos, entire playlists, or multiple URLs simultaneously with intelligent concurrent processing and smart organization!
+> [!Note]
+>
+> #### 🚀 The Ultimate YouTube Downloader
+> 
+> Download single videos, entire playlists, or multiple URLs simultaneously with intelligent concurrent processing and smart organization!
 
 This powerful Python script downloads YouTube content in the highest available quality while handling multiple formats efficiently. Perfect for content creators, educators, and anyone who needs reliable YouTube downloads!
 
