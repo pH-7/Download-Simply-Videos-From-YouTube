@@ -110,6 +110,45 @@ def get_content_type(url: str) -> str:
     return content_type
 
 
+def count_archived_entries(url: str, ydl: YoutubeDL) -> int:
+    """
+    Count how many entries of a playlist or channel are already in
+    the download archive.
+
+    yt-dlp omits archived entries from its results entirely, so a
+    fully-downloaded playlist is indistinguishable from an empty one
+    by entry count alone. This probe tells them apart.
+
+    Args:
+        url (str): Playlist or channel URL to enumerate
+        ydl (YoutubeDL): Downloader holding the loaded archive
+
+    Returns:
+        int: Number of entries already recorded in the archive
+    """
+
+    probe_options = {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,
+        'skip_download': True,
+    }
+
+    try:
+        with YoutubeDL(probe_options) as probe:
+            info = probe.extract_info(url, download=False)
+
+    except Exception:
+        return 0
+
+    entries = (info or {}).get('entries') or []
+
+    return sum(
+        1 for entry in entries
+        if entry and ydl.in_download_archive(entry)
+    )
+
+
 def parse_multiple_urls(input_string: str) -> List[str]:
     """
     Parse multiple URLs from input string separated by commas,
@@ -380,6 +419,38 @@ def download_single_video(
                     )
 
                     if video_count == 0:
+
+                        # Nothing was downloaded. That is only a failure
+                        # if the archive isn't the reason the entries are
+                        # missing, since yt-dlp drops archived entries
+                        # from the result entirely.
+                        archived_count = count_archived_entries(url, ydl)
+
+                        if archived_count:
+
+                            # Every remaining entry, if any, was
+                            # unavailable rather than downloadable.
+                            unavailable_note = (
+                                f" ({len(entries)} unavailable)"
+                                if entries
+                                else ""
+                            )
+
+                            return {
+                                'url': url,
+                                'success': True,
+                                'count': 0,
+                                'skipped': True,
+                                'message': (
+                                    f"⏭️  [Thread {thread_id}] "
+                                    f"{content_type.title()} '{title}' "
+                                    f"was already downloaded. Skipping "
+                                    f"{archived_count} archived "
+                                    f"{'entries' if archived_count != 1 else 'entry'}"
+                                    f"{unavailable_note}."
+                                )
+                            }
+
                         raise Exception(
                             "Playlist appears empty or unavailable"
                         )
