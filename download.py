@@ -9,16 +9,16 @@ from functools import lru_cache
 
 
 @lru_cache(maxsize=128)
-def get_url_info(url: str) -> Tuple[bool, Dict]:
+def get_url_info(url: str) -> Tuple[str, Dict]:
     """
     Get URL information with caching to avoid duplicate yt-dlp calls.
-    Returns (is_playlist, info_dict) for efficient reuse.
+    Returns (content_type, info_dict) for efficient reuse.
 
     Args:
         url (str): YouTube URL to analyze
 
     Returns:
-        Tuple[bool, Dict]: (is_playlist, info_dict)
+        Tuple[str, Dict]: (content_type, info_dict) where content_type is 'video', 'playlist', or 'channel'
     """
     try:
         # Use yt-dlp to extract info without downloading
@@ -38,18 +38,39 @@ def get_url_info(url: str) -> Tuple[bool, Dict]:
                 # Fallback to URL parsing if yt-dlp fails
                 parsed_url = urlparse(url)
                 query_params = parse_qs(parsed_url.query)
-                is_playlist = 'list' in query_params
-                return is_playlist, {}
 
-            is_playlist = info.get('_type') == 'playlist'
-            return is_playlist, info
+                # Check for channel patterns
+                if '/@' in url or '/channel/' in url or '/c/' in url or '/user/' in url:
+                    return 'channel', {}
+                elif 'list' in query_params:
+                    return 'playlist', {}
+                else:
+                    return 'video', {}
+
+            # Determine content type based on yt-dlp info
+            content_type = info.get('_type', 'video')
+
+            # Handle channel detection
+            if content_type == 'playlist':
+                # Check if it's actually a channel (uploader_id indicates channel content)
+                if info.get('uploader_id') and ('/@' in url or '/channel/' in url or '/c/' in url or '/user/' in url):
+                    return 'channel', info
+                else:
+                    return 'playlist', info
+
+            return content_type, info
 
     except Exception:
-        # Simple fallback: check for 'list' parameter
+        # Simple fallback: check URL patterns
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
-        is_playlist = 'list' in query_params
-        return is_playlist, {}
+
+        if '/@' in url or '/channel/' in url or '/c/' in url or '/user/' in url:
+            return 'channel', {}
+        elif 'list' in query_params:
+            return 'playlist', {}
+        else:
+            return 'video', {}
 
 
 def is_playlist_url(url: str) -> bool:
@@ -63,8 +84,22 @@ def is_playlist_url(url: str) -> bool:
     Returns:
         bool: True if URL is a playlist, False if single video
     """
-    is_playlist, _ = get_url_info(url)
-    return is_playlist
+    content_type, _ = get_url_info(url)
+    return content_type == 'playlist'
+
+
+def get_content_type(url: str) -> str:
+    """
+    Get the content type of a YouTube URL.
+
+    Args:
+        url (str): YouTube URL to analyze
+
+    Returns:
+        str: 'video', 'playlist', or 'channel'
+    """
+    content_type, _ = get_url_info(url)
+    return content_type
 
 
 def parse_multiple_urls(input_string: str) -> List[str]:
@@ -86,7 +121,15 @@ def parse_multiple_urls(input_string: str) -> List[str]:
     valid_urls = []
     invalid_count = 0
     for url in urls:
-        if 'youtube.com' in url or 'youtu.be' in url:
+        if ('youtube.com' in url or 'youtu.be' in url) and (
+            '/watch?' in url or
+            '/playlist?' in url or
+            '/@' in url or
+            '/channel/' in url or
+            '/c/' in url or
+            '/user/' in url or
+            'youtu.be/' in url
+        ):
             valid_urls.append(url)
         elif url:  # Only show warning for non-empty strings
             print(f"⚠️  Skipping invalid URL: {url}")
@@ -120,10 +163,10 @@ def get_available_formats(url: str) -> None:
 
 def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False) -> dict:
     """
-    Download a single YouTube video or playlist.
+    Download a single YouTube video, playlist, or channel.
 
     Args:
-        url (str): YouTube URL to download
+        url (str): YouTube URL to download (video, playlist, or channel)
         output_path (str): Directory to save the download
         thread_id (int): Thread identifier for logging
         audio_only (bool): If True, download audio only in MP3 format
@@ -179,24 +222,26 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
     if not audio_only:
         ydl_opts['merge_output_format'] = 'mp4'
 
-    # Set different output templates for playlists and single videos
-    is_playlist, cached_info = get_url_info(url)
+    # Set different output templates for playlists, channels and single videos
+    content_type, cached_info = get_url_info(url)
 
     # Debug: Print detection result
     if thread_id == 1:  # Only print for first thread to avoid spam
-        print(
-            f"🔍 [Debug] URL analysis: {'Playlist' if is_playlist else 'Single video'}")
+        print(f"🔍 [Debug] URL analysis: {content_type.title()}")
 
-    if is_playlist:
+    if content_type == 'playlist':
         ydl_opts['outtmpl'] = os.path.join(
             output_path, '%(playlist_title)s', f'%(playlist_index)s-%(title)s.{file_extension}')
-        content_type = "playlist"
         print(
-            f"🎵 [Thread {thread_id}] Detected playlist URL. Downloading entire playlist...")
-    else:
+            f"📋 [Thread {thread_id}] Detected playlist URL. Downloading entire playlist...")
+    elif content_type == 'channel':
+        ydl_opts['outtmpl'] = os.path.join(
+            output_path, '%(uploader)s', f'%(upload_date)s-%(title)s.{file_extension}')
+        print(
+            f"📺 [Thread {thread_id}] Detected channel URL. Downloading entire channel...")
+    else:  # single video
         ydl_opts['outtmpl'] = os.path.join(
             output_path, f'%(title)s.{file_extension}')
-        content_type = "video"
         print(
             f"🎥 [Thread {thread_id}] Detected single video URL. Downloading {'audio' if audio_only else 'video'}...")
 
@@ -214,27 +259,29 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
                 }
 
             if info.get('_type') == 'playlist':
-                playlist_title = info.get('title', 'Unknown Playlist')
+                title = info.get('title', 'Unknown Playlist')
                 video_count = len(info.get('entries', []))
                 print(
-                    f"📋 [Thread {thread_id}] Playlist: '{playlist_title}' ({video_count} videos)")
+                    f"📋 [Thread {thread_id}] {content_type.title()}: '{title}' ({video_count} videos)")
 
                 # Ensure we have entries to download
                 if video_count == 0:
                     return {
                         'url': url,
                         'success': False,
-                        'message': f"❌ [Thread {thread_id}] Playlist appears to be empty or private"
+                        'message': f"❌ [Thread {thread_id}] {content_type.title()} appears to be empty or private"
                     }
 
             # Download content
             ydl.download([url])
 
             if info.get('_type') == 'playlist':
+                title = info.get('title', f'Unknown {content_type.title()}')
+                video_count = len(info.get('entries', []))
                 return {
                     'url': url,
                     'success': True,
-                    'message': f"✅ [Thread {thread_id}] Playlist '{playlist_title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'})"
+                    'message': f"✅ [Thread {thread_id}] {content_type.title()} '{title}' download completed! ({video_count} {'MP3s' if audio_only else 'videos'})"
                 }
             else:
                 return {
@@ -254,11 +301,11 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
 def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
                              list_formats: bool = False, max_workers: int = 3, audio_only: bool = False) -> None:
     """
-    Download YouTube content (single videos or playlists) in MP4 format or MP3 audio only.
+    Download YouTube content (single videos, playlists, or channels) in MP4 format or MP3 audio only.
     Supports multiple URLs for simultaneous downloading.
 
     Args:
-        urls (List[str]): List of YouTube URLs to download
+        urls (List[str]): List of YouTube URLs to download (videos, playlists, or channels)
         output_path (str, optional): Directory to save the downloads. Defaults to './downloads'
         list_formats (bool): If True, only list available formats without downloading
         max_workers (int): Maximum number of concurrent downloads
@@ -283,15 +330,24 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
     print(f"🎧 Format: {'MP3 Audio Only' if audio_only else 'MP4 Video'}")
 
     # Show what types of content we're downloading
-    playlist_count = sum(1 for url in urls if is_playlist_url(url))
-    video_count = len(urls) - playlist_count
-    if playlist_count > 0 and video_count > 0:
-        print(
-            f"📋 Content: {playlist_count} playlist(s) + {video_count} video(s)")
-    elif playlist_count > 0:
-        print(f"📋 Content: {playlist_count} playlist(s)")
+    playlist_count = sum(
+        1 for url in urls if get_content_type(url) == 'playlist')
+    channel_count = sum(
+        1 for url in urls if get_content_type(url) == 'channel')
+    video_count = len(urls) - playlist_count - channel_count
+
+    content_summary = []
+    if playlist_count > 0:
+        content_summary.append(f"{playlist_count} playlist(s)")
+    if channel_count > 0:
+        content_summary.append(f"{channel_count} channel(s)")
+    if video_count > 0:
+        content_summary.append(f"{video_count} video(s)")
+
+    if content_summary:
+        print(f"📋 Content: {' + '.join(content_summary)}")
     else:
-        print(f"🎥 Content: {video_count} video(s)")
+        print("🎥 Content: Unknown content type")
 
     print("-" * 60)
 
@@ -336,7 +392,7 @@ if __name__ == "__main__":
         download_youtube_content([url], list_formats=True)
     else:
         # Normal download flow
-        print("📥 YouTube Multi-Video Downloader")
+        print("📥 YouTube Multi-Content Downloader")
         print("=" * 50)
         print("💡 SUPPORTED INPUT FORMATS:")
         print("   🔸 Single URL: Just paste one YouTube URL")
@@ -344,6 +400,14 @@ if __name__ == "__main__":
         print("   🔸 Space-separated: url1 url2 url3")
         print("   🔸 Mixed format: url1, url2 url3, url4")
         print("   🔸 Multi-line: Press Enter without typing, then one URL per line")
+        print()
+        print("🎯 SUPPORTED CONTENT TYPES:")
+        print("   📹 Single Videos: https://www.youtube.com/watch?v=...")
+        print("   📋 Playlists: https://www.youtube.com/playlist?list=...")
+        print("   📺 Channels: https://www.youtube.com/@channelname")
+        print("   📺 Channels: https://www.youtube.com/channel/UC...")
+        print("   📺 Channels: https://www.youtube.com/c/channelname")
+        print("   📺 Channels: https://www.youtube.com/user/username")
         print("-" * 50)
 
         urls_input = input("Enter YouTube URL(s): ")
