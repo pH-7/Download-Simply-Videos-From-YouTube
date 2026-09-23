@@ -33,6 +33,20 @@ def format_selector_with_limit(max_res: int) -> str:
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _streams(chosen) -> list:
+    """
+    Normalise a format-selector result into its individual streams.
+
+    yt-dlp returns a single dict for a merged selection, carrying the
+    separate video/audio streams under 'requested_formats' -- not a
+    list/tuple. Inspecting the dict directly makes a correct
+    video+audio pick look like one pre-merged stream.
+    """
+    if isinstance(chosen, (list, tuple)):
+        return list(chosen)
+    return chosen.get("requested_formats") or [chosen]
+
+
 def _probe_resolution(filepath: str) -> tuple[int, int]:
     """Return (width, height) of a video file using ffprobe."""
     result = subprocess.run(
@@ -98,11 +112,7 @@ class TestFormatSelection(unittest.TestCase):
             msg="Format selector returned no matching formats.",
         )
         # Separate-stream selection yields a tuple/group; pre-merged is a single dict
-        chosen = self.selected[0]
-        if isinstance(chosen, (list, tuple)):
-            streams = list(chosen)
-        else:
-            streams = [chosen]
+        streams = _streams(self.selected[0])
         self.assertEqual(
             len(streams), 2,
             msg=(
@@ -115,8 +125,7 @@ class TestFormatSelection(unittest.TestCase):
         """Selected video stream must be at least 720p."""
         if not self.selected:
             self.skipTest("No formats selected.")
-        chosen = self.selected[0]
-        streams = list(chosen) if isinstance(chosen, (list, tuple)) else [chosen]
+        streams = _streams(self.selected[0])
         video_stream = next(
             (f for f in streams if f.get("vcodec") not in (None, "none")), None
         )
@@ -134,8 +143,7 @@ class TestFormatSelection(unittest.TestCase):
         """
         if not self.selected:
             self.skipTest("No formats selected.")
-        chosen = self.selected[0]
-        streams = list(chosen) if isinstance(chosen, (list, tuple)) else [chosen]
+        streams = _streams(self.selected[0])
         video_stream = next(
             (f for f in streams if f.get("vcodec") not in (None, "none")), None
         )
@@ -167,8 +175,7 @@ class TestFormatSelectionWithLimit(unittest.TestCase):
         """Selected video stream must not exceed the max_resolution."""
         if not self.selected:
             self.skipTest("No formats selected.")
-        chosen = self.selected[0]
-        streams = list(chosen) if isinstance(chosen, (list, tuple)) else [chosen]
+        streams = _streams(self.selected[0])
         video_stream = next(
             (f for f in streams if f.get("vcodec") not in (None, "none")), None
         )
