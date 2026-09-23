@@ -36,7 +36,7 @@ def get_url_info(url: str) -> Tuple[bool, Dict]:
             return is_playlist, info
 
     except Exception:
-        # fallback: check for 'list' parameter in URL
+        # Simple fallback: check for 'list' parameter
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
         is_playlist = 'list' in query_params
@@ -166,8 +166,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
-            # Always extract fresh info for download - cached info is only for detection
-            # We need full metadata for download, not just the basic flat extraction
+            # Extract fresh info for download (cached info is only for detection)
             info = ydl.extract_info(url, download=False)
 
             if '_type' in info and info['_type'] == 'playlist':
@@ -250,22 +249,20 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
 
     print("-" * 60)
 
-    # Download videos concurrently
+    # Concurrent downloads
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all download tasks
         future_to_url = {
             executor.submit(download_single_video, url, output_path, i+1): url
             for i, url in enumerate(urls)
         }
 
-        # Collect results as they complete
+        # Collect results
         for future in as_completed(future_to_url):
             result = future.result()
             results.append(result)
             print(result['message'])
 
-    # Print summary
     print("\n" + "=" * 60)
     print("📊 DOWNLOAD SUMMARY")
     print("=" * 60)
