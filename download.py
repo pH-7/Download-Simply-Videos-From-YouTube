@@ -187,7 +187,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         file_extension = 'mp4'
         postprocessors = [{
             'key': 'FFmpegVideoConvertor',
-            'preferredformat': 'mp4',
+            'preferedformat': 'mp4',
         }]
 
     # Configure yt-dlp options
