@@ -21,6 +21,13 @@ from download import (
 TEST_URL = "https://www.youtube.com/watch?v=K3SR37pIzVs"
 TEST_DOWNLOADS_DIR = os.path.join(os.path.dirname(__file__), "test_downloads")
 
+# Cap the download test's resolution. Uncapped, it pulls the best stream
+# available (2160p, ~2GB, several minutes). 720p exercises the same
+# separate-stream + merge path and still satisfies the >=720p assertion.
+# Full-quality selection is verified by TestFormatSelection, which does
+# not download anything.
+TEST_MAX_RESOLUTION = 720
+
 # Default format selector (no resolution limit) - matches download.py
 FORMAT_SELECTOR = "bestvideo+bestaudio/best"
 
@@ -202,6 +209,7 @@ class TestVideoDownload(unittest.TestCase):
             output_path=TEST_DOWNLOADS_DIR,
             thread_id=0,
             audio_only=False,
+            max_resolution=TEST_MAX_RESOLUTION,
         )
         # Find the downloaded file (first .mp4 in test_downloads/)
         cls.downloaded_file = None
