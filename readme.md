@@ -1,8 +1,8 @@
-# YouTube Playlist Downloader
+# Download Simply Videos From YouTube
 
-**A powerful Python script for downloading high-quality YouTube playlists with ease! 🎥⚡**
+**A powerful Python script for downloading high-quality YouTube videos and playlists with ease! 🎥⚡**
 
-This program not only downloads YouTube playlists in the highest available quality but also handles multiple formats, subtitles, and thumbnails efficiently. Perfect for content creators and educational purposes! 
+This program not only downloads YouTube content in the highest available quality but also handles multiple formats, subtitles, and thumbnails efficiently. Perfect for content creators and educational purposes! 
 
 - [⚙️ Requirements](#%EF%B8%8F-requirements)
 - [📦 Installation](#-installation)
@@ -15,7 +15,7 @@ This program not only downloads YouTube playlists in the highest available quali
 ## ⚙️ Requirements
 * [Python v3.7](https://www.python.org/downloads/) or higher 🐍
 * FFmpeg installed on your system 🎬
-* YouTube playlist URLs that you have permission to download 📝
+* YouTube URLs (single videos or playlists) that you have permission to download 📝
 
 ## 📦 Installation
 
@@ -49,14 +49,17 @@ python download_playlist.py
 ```
 
 **The script will:**
-1. Prompt for the YouTube playlist URL
+1. Prompt for the YouTube URL (video or playlist)
 2. Ask for an output directory (optional)
-3. Download videos in the highest available quality
+3. Download content in the highest available quality
 4. Save thumbnails and subtitles
-5. Organize content by playlist name
+5. Organize content appropriately:
+   - Single videos: Saved directly in the output directory
+   - Playlists: Organized in a playlist-named folder with numbered files
 
 **Features:**
-- ✨ High-quality video and audio downloads
+- ✨ Support for both single videos and playlists
+- 🎥 High-quality video and audio downloads
 - 📁 Organized folder structure
 - 📑 Automatic subtitle downloading
 - 🖼️ Thumbnail extraction
@@ -87,7 +90,7 @@ Contributions to this project are welcome. Please fork the repository and submit
 
 ## ⚖️ License
 
-**YouTube Playlist Downloader** is generously distributed under the *[MIT License](https://opensource.org/licenses/MIT)* 🎉 Enjoy!
+**Download Simply Videos From YouTube** is generously distributed under the *[MIT License](https://opensource.org/licenses/MIT)* 🎉 Enjoy!
 
 ## ⚠️ Disclaimer
 
