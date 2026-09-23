@@ -52,7 +52,7 @@ Open a terminal in the project folder, then follow these steps:
 2. **Install Python dependencies**
 
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements.txt # pip3 install -r requirements.txt
    ```
 
 3. **Install FFmpeg**
