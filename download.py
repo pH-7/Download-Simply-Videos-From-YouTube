@@ -728,11 +728,12 @@ if __name__ == "__main__":
                 resolution_choice
             )
 
+
             if max_resolution:
                 print(f"📺 Selected: Max {max_resolution}p")
-
             else:
-                print("📺 Selected: Best available quality")
+                # Yellow text for fallback warning
+                print("\033[93m⚠️  Invalid input. Falling back to: Best available quality\033[0m")
 
         max_workers = 1
 
