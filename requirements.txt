@@ -1,3 +1,5 @@
 yt-dlp>=2025.10.14
 ffmpeg-python>=0.2.0
-typing
+
+# Python 3.10+ is recommended for the latest yt-dlp releases.
+# If on Python 3.9, you are limited to yt-dlp 2025.10.14.

@@ -7,12 +7,24 @@ from typing import Optional, List, Dict, Tuple
 from urllib.parse import urlparse, parse_qs
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
+import shutil
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
 MAX_CONCURRENT_WORKERS = 5
 DEFAULT_CONCURRENT_WORKERS = 3
-YOUTUBE_PLAYER_CLIENTS = ['web', 'android', 'ios']
+SUPPORTED_BROWSERS = ['chrome', 'firefox', 'safari', 'edge', 'brave', 'opera', 'vivaldi']
+
+
+def _check_environment():
+    """Check Python/yt-dlp versions and warn about potential issues."""
+    if sys.version_info < (3, 10):
+        print(f"⚠️  Python {sys.version_info.major}.{sys.version_info.minor} detected. "
+              "Python 3.10+ is recommended for the latest yt-dlp (which fixes YouTube 403 errors).")
+        print("   Consider upgrading Python: https://www.python.org/downloads/")
+    if shutil.which('ffmpeg') is None:
+        print("⚠️  ffmpeg not found on PATH. Merging video+audio streams and MP3 conversion require ffmpeg.")
+        print("   Install: brew install ffmpeg  (macOS) or https://ffmpeg.org/download.html")
 
 
 @lru_cache(maxsize=128)
@@ -142,7 +154,7 @@ def get_available_formats(url: str) -> None:
         print(f"Error listing formats: {str(error)}")
 
 
-def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False, max_resolution: Optional[int] = None) -> dict:
+def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_only: bool = False, max_resolution: Optional[int] = None, browser: Optional[str] = None) -> dict:
     """
     Download a single YouTube video, playlist, or channel with retry mechanism.
 
@@ -166,27 +178,31 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         }]
         print(f"🎵 [Thread {thread_id}] Audio-only mode: Downloading MP3...")
     else:
-        # Prefer h264/aac (native MP4 codecs) to avoid re-encoding quality loss
-        # Use separate video+audio streams for best quality
+        # Prioritize highest resolution; prefer h264/aac when resolutions are equal
+        # YouTube serves 1440p+ only in VP9/AV1 so resolution must outrank codec
         if max_resolution:
-            # User specified a max resolution - strictly enforce it
             format_selector = (
-                f'bestvideo[height<={max_resolution}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/'
-                f'bestvideo[height<={max_resolution}][ext=mp4]+bestaudio[ext=m4a]/'
                 f'bestvideo[height<={max_resolution}]+bestaudio/'
                 f'best[height<={max_resolution}]'
             )
         else:
-            # No limit - get the best available quality
             format_selector = (
-                'bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/'
-                'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
                 'bestvideo+bestaudio/'
                 'best'
             )
         file_extension = 'mp4'
         # Only remux (no re-encoding) when merging separate streams
         postprocessors = []
+
+    # Track individual video failures within a playlist/channel download
+    failed_video_urls: List[str] = []
+
+    def error_progress_hook(d: dict) -> None:
+        if d.get('status') == 'error':
+            info = d.get('info_dict') or {}
+            video_url = info.get('webpage_url') or info.get('url', '')
+            if video_url and video_url not in failed_video_urls:
+                failed_video_urls.append(video_url)
 
     downloader_options = {
         'format': format_selector,
@@ -199,13 +215,18 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         'clean_infojson': True,
         'retries': MAX_RETRIES,
         'fragment_retries': MAX_RETRIES,
-        'extractor_args': {
-            'youtube': {
-                'player_client': YOUTUBE_PLAYER_CLIENTS,
-            }
-        },
+        # Sort formats: highest resolution first, prefer h264 for video; best audio bitrate
+        'format_sort': ['res', 'vcodec:h264:vp9:av01', 'abr'],
         'nocheckcertificate': True,
+        'progress_hooks': [error_progress_hook],
+        # Small delay between items in a playlist to recover from transient network errors
+        'sleep_interval': 2,
+        'sleep_interval_requests': 1,
+        'retry_sleep_functions': {'http': lambda n: RETRY_DELAY * (2 ** (n - 1))},
     }
+
+    if browser:
+        downloader_options['cookiesfrombrowser'] = (browser,)
 
     if not audio_only:
         downloader_options['merge_output_format'] = 'mp4'
@@ -244,7 +265,8 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
 
                 if download_result.get('_type') == 'playlist':
                     title = download_result.get('title', 'Unknown Playlist')
-                    video_count = len(download_result.get('entries', []))
+                    entries = download_result.get('entries') or []
+                    video_count = len(entries)
                     print(f"📋 [Thread {thread_id}] {content_type.title()}: '{title}' ({video_count} videos)")
 
                     if video_count == 0:
@@ -254,6 +276,43 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
                             'count': 0,
                             'message': f"❌ [Thread {thread_id}] {content_type.title()} appears to be empty or private"
                         }
+
+                    # Retry any videos that failed due to transient network errors
+                    if failed_video_urls:
+                        print(f"⚠️  [Thread {thread_id}] {len(failed_video_urls)} video(s) failed during playlist download. Retrying individually...")
+                        retry_opts = {**downloader_options, 'noplaylist': True, 'sleep_interval': 0, 'sleep_interval_requests': 0}
+                        still_failed: List[str] = []
+                        for retry_url in failed_video_urls:
+                            retry_opts['outtmpl'] = downloader_options['outtmpl']
+                            time.sleep(RETRY_DELAY * 2)
+                            print(f"🔄 [Thread {thread_id}] Retrying: {retry_url}")
+                            retry_success = False
+                            for retry_attempt in range(1, MAX_RETRIES + 1):
+                                try:
+                                    with YoutubeDL(retry_opts) as retry_ydl:
+                                        result = retry_ydl.extract_info(retry_url, download=True)
+                                        if result is not None:
+                                            retry_success = True
+                                            break
+                                except Exception:
+                                    pass
+                                if retry_attempt < MAX_RETRIES:
+                                    time.sleep(RETRY_DELAY * (2 ** retry_attempt))
+                            if not retry_success:
+                                still_failed.append(retry_url)
+
+                        if still_failed:
+                            failed_list = '\n     '.join(still_failed)
+                            return {
+                                'url': url,
+                                'success': True,
+                                'count': video_count - len(still_failed),
+                                'message': (
+                                    f"⚠️  [Thread {thread_id}] {content_type.title()} '{title}' partially downloaded "
+                                    f"({video_count - len(still_failed)}/{video_count} {'MP3s' if audio_only else 'videos'}) 📂 Location: {output_path}\n"
+                                    f"   ❌ Still failed after retry:\n     {failed_list}"
+                                )
+                            }
 
                     return {
                         'url': url,
@@ -295,7 +354,8 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
 
 def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
                              list_formats: bool = False, max_workers: int = DEFAULT_CONCURRENT_WORKERS, 
-                             audio_only: bool = False, max_resolution: Optional[int] = None) -> None:
+                             audio_only: bool = False, max_resolution: Optional[int] = None,
+                             browser: Optional[str] = None) -> None:
     """
     Download YouTube content (single videos, playlists, or channels) in MP4 format or MP3 audio only.
     Supports multiple URLs for simultaneous downloading with optimized concurrency.
@@ -307,6 +367,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
         max_workers (int): Maximum number of concurrent downloads (1-5, default=3)
         audio_only (bool): If True, download audio only in MP3 format
         max_resolution (int, optional): Maximum video height (e.g., 720, 1080, 1440, 2160). None = best available.
+        browser (str, optional): Browser to extract cookies from (e.g., 'chrome', 'firefox').
     """
     if output_path is None:
         output_path = os.path.join(os.getcwd(), 'downloads')
@@ -349,10 +410,13 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
 
     print("-" * 60)
 
+    if browser:
+        print(f"🍪 Using cookies from: {browser}")
+
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {
-            executor.submit(download_single_video, url, output_path, i+1, audio_only, max_resolution): url
+            executor.submit(download_single_video, url, output_path, i+1, audio_only, max_resolution, browser): url
             for i, url in enumerate(urls)
         }
 
@@ -385,6 +449,7 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
 
 
 if __name__ == "__main__":
+    _check_environment()
     if len(sys.argv) > 1 and sys.argv[1] == '--list-formats':
         url = input("Enter the YouTube URL to list formats: ")
         download_youtube_content([url], list_formats=True)
@@ -496,12 +561,24 @@ if __name__ == "__main__":
             print("🎙️ Format: MP4 Video (best quality)")
         if len(urls) > 1:
             print(f"⚡ Concurrent workers: {max_workers}")
+
+        browser = None
+        browser_input = input(
+            "\nUse browser cookies to avoid 403 errors? (helps with age-restricted/auth-required videos)\n"
+            f"  Supported: {', '.join(SUPPORTED_BROWSERS)}\n"
+            "  Enter browser name or press Enter to skip: ").strip().lower()
+        if browser_input in SUPPORTED_BROWSERS:
+            browser = browser_input
+            print(f"🍪 Will use cookies from: {browser}")
+        elif browser_input:
+            print(f"⚠️  Unknown browser '{browser_input}', skipping cookie extraction.")
+
         print(
             f"📁 Output: {output_dir if output_dir else 'default (./downloads)'}")
 
         if output_dir:
             download_youtube_content(
-                urls, output_dir, max_workers=max_workers, audio_only=audio_only, max_resolution=max_resolution)
+                urls, output_dir, max_workers=max_workers, audio_only=audio_only, max_resolution=max_resolution, browser=browser)
         else:
             download_youtube_content(
-                urls, max_workers=max_workers, audio_only=audio_only, max_resolution=max_resolution)
+                urls, max_workers=max_workers, audio_only=audio_only, max_resolution=max_resolution, browser=browser)
