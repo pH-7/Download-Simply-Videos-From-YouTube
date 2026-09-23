@@ -23,7 +23,7 @@ This python program not only downloads YouTube content in the highest available 
 
 1. Clone this repository:
    ```console
-   git@github.com:pH-7/Download-Simply-Videos-From-YouTube.git && cd Download-Simply-Videos-From-YouTube
+   git clone https://github.com/pH-7/Download-Simply-Videos-From-YouTube.git && cd Download-Simply-Videos-From-YouTube
    ```
 
 2. Install the required Python packages:
