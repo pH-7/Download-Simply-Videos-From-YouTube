@@ -7,7 +7,11 @@ from pathlib import Path
 from contextlib import redirect_stdout
 from unittest.mock import MagicMock, patch
 
-from download import download_single_video, download_youtube_content
+from download import (
+    count_archived_entries,
+    download_single_video,
+    download_youtube_content,
+)
 
 
 class TestDownloadArchiveHandling(unittest.TestCase):
@@ -150,6 +154,88 @@ class TestDownloadArchiveHandling(unittest.TestCase):
                 )
 
         self.assertIn('Failed downloads: 1 file', output.getvalue())
+
+
+class TestArchivedPlaylistHandling(unittest.TestCase):
+    """
+    yt-dlp omits archived entries from a playlist result entirely, so a
+    fully-downloaded playlist looks empty. It must not be reported as a
+    failure -- but a genuinely empty one still must be.
+    """
+
+    def _run(self, entries, archived_count):
+        ydl = MagicMock()
+        ydl.in_download_archive.return_value = False
+        ydl.extract_info.return_value = {
+            '_type': 'playlist',
+            'title': 'Some Playlist',
+            'entries': entries,
+        }
+
+        with patch('download.YoutubeDL') as youtube_dl, \
+                patch('download.get_url_info', return_value=('playlist', {'id': 'pl'})), \
+                patch('download.count_archived_entries', return_value=archived_count), \
+                patch('download.time.sleep'):
+            youtube_dl.return_value.__enter__.return_value = ydl
+
+            with tempfile.TemporaryDirectory() as output_path:
+                return download_single_video(
+                    'https://www.youtube.com/playlist?list=pl',
+                    output_path,
+                )
+
+    def test_fully_archived_playlist_is_a_skip_not_a_failure(self):
+        result = self._run([], archived_count=19)
+
+        self.assertTrue(result['success'])
+        self.assertTrue(result['skipped'])
+        self.assertEqual(result['count'], 0)
+        self.assertIn('19 archived entries', result['message'])
+
+    def test_archived_playlist_with_unavailable_entries_notes_both(self):
+        result = self._run([None], archived_count=4)
+
+        self.assertTrue(result['skipped'])
+        self.assertIn('4 archived entries', result['message'])
+        self.assertIn('1 unavailable', result['message'])
+
+    def test_genuinely_empty_playlist_still_fails(self):
+        result = self._run([], archived_count=0)
+
+        self.assertFalse(result['success'])
+        self.assertIn('empty or unavailable', result['message'])
+
+    def test_all_entries_unavailable_still_fails(self):
+        result = self._run([None, None, None], archived_count=0)
+
+        self.assertFalse(result['success'])
+        self.assertIn('empty or unavailable', result['message'])
+
+    def test_partial_playlist_still_reports_success(self):
+        result = self._run([{'id': 'a'}, None], archived_count=0)
+
+        self.assertTrue(result['success'])
+        self.assertFalse(result.get('skipped', False))
+        self.assertEqual(result['count'], 1)
+
+
+class TestCountArchivedEntries(unittest.TestCase):
+
+    def test_counts_only_entries_present_in_the_archive(self):
+        flat = {'entries': [{'id': 'a'}, {'id': 'b'}, None, {'id': 'c'}]}
+        ydl = MagicMock()
+        ydl.in_download_archive.side_effect = lambda e: e['id'] in ('a', 'c')
+
+        with patch('download.YoutubeDL') as youtube_dl:
+            youtube_dl.return_value.__enter__.return_value.extract_info.return_value = flat
+            self.assertEqual(count_archived_entries('https://x', ydl), 2)
+
+    def test_probe_failure_is_not_fatal(self):
+        ydl = MagicMock()
+
+        with patch('download.YoutubeDL') as youtube_dl:
+            youtube_dl.return_value.__enter__.return_value.extract_info.side_effect = OSError('net')
+            self.assertEqual(count_archived_entries('https://x', ydl), 0)
 
 
 if __name__ == '__main__':
