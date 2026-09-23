@@ -38,7 +38,8 @@ This program not only downloads YouTube content in the highest available quality
      ```console
      brew install ffmpeg
      ```
-   - **Windows:** Download from the [FFmpeg website](https://ffmpeg.org/download.html) and add to PATH
+   - **Windows:**
+      Download from the [FFmpeg website](https://ffmpeg.org/download.html), follow the instructions and add to PATH
 
 ## 🪄 Usage
 
