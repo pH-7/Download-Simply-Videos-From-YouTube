@@ -110,6 +110,45 @@ def get_content_type(url: str) -> str:
     return content_type
 
 
+def count_archived_entries(url: str, ydl: YoutubeDL) -> int:
+    """
+    Count how many entries of a playlist or channel are already in
+    the download archive.
+
+    yt-dlp omits archived entries from its results entirely, so a
+    fully-downloaded playlist is indistinguishable from an empty one
+    by entry count alone. This probe tells them apart.
+
+    Args:
+        url (str): Playlist or channel URL to enumerate
+        ydl (YoutubeDL): Downloader holding the loaded archive
+
+    Returns:
+        int: Number of entries already recorded in the archive
+    """
+
+    probe_options = {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,
+        'skip_download': True,
+    }
+
+    try:
+        with YoutubeDL(probe_options) as probe:
+            info = probe.extract_info(url, download=False)
+
+    except Exception:
+        return 0
+
+    entries = (info or {}).get('entries') or []
+
+    return sum(
+        1 for entry in entries
+        if entry and ydl.in_download_archive(entry)
+    )
+
+
 def parse_multiple_urls(input_string: str) -> List[str]:
     """
     Parse multiple URLs from input string separated by commas,
@@ -384,6 +423,38 @@ def download_single_video(
                     skipped_count = len(entries) - video_count
 
                     if video_count == 0:
+
+                        # Nothing was downloaded. That is only a failure
+                        # if the archive isn't the reason the entries are
+                        # missing, since yt-dlp drops archived entries
+                        # from the result entirely.
+                        archived_count = count_archived_entries(url, ydl)
+
+                        if archived_count:
+
+                            # Every remaining entry, if any, was
+                            # unavailable rather than downloadable.
+                            unavailable_note = (
+                                f" ({skipped_count} unavailable)"
+                                if skipped_count
+                                else ""
+                            )
+
+                            return {
+                                'url': url,
+                                'success': True,
+                                'count': 0,
+                                'skipped': True,
+                                'message': (
+                                    f"⏭️  [Thread {thread_id}] "
+                                    f"{content_type.title()} '{title}' "
+                                    f"was already downloaded. Skipping "
+                                    f"{archived_count} archived "
+                                    f"{'entries' if archived_count != 1 else 'entry'}"
+                                    f"{unavailable_note}."
+                                )
+                            }
+
                         raise Exception(
                             "Playlist appears empty or unavailable"
                         )
@@ -596,10 +667,8 @@ def download_youtube_content(
         for r in successful_downloads
     )
 
-    total_failed_count = sum(
-        max(1, r.get('count', 0))
-        for r in failed_downloads
-    )
+    # A failed result carries no file count, so this is a URL count
+    total_failed_count = len(failed_downloads)
 
     total_skipped_count = len(skipped_downloads)
 
@@ -612,7 +681,7 @@ def download_youtube_content(
     print(
         f"❌ Failed downloads: "
         f"{total_failed_count} "
-        f"{'files' if total_failed_count != 1 else 'file'}"
+        f"{'URLs' if total_failed_count != 1 else 'URL'}"
     )
 
     if total_skipped_count:
@@ -630,7 +699,10 @@ def download_youtube_content(
             print(f"   • {result['url']}")
             print(f"     Reason: {result['message']}")
 
-    if total_successful_count:
+    if total_successful_count and failed_downloads:
+        print(f"\n📂 Downloaded files saved to: {output_path}")
+
+    elif total_successful_count:
         print(f"\n🎉 All files saved to: {output_path}")
 
     elif skipped_downloads and not failed_downloads:
@@ -656,7 +728,7 @@ if __name__ == "__main__":
     else:
 
         print("📥 YouTube Multi-Content Downloader")
-        print("=" * 50)
+        print("=" * 60)
 
         print("💡 SUPPORTED INPUT FORMATS:")
         print("   🔸 Single URL: Just paste one YouTube URL")
@@ -673,9 +745,8 @@ if __name__ == "__main__":
         print("   📺 Channels: https://www.youtube.com/channel/UC...")
         print("   📺 Channels: https://www.youtube.com/c/channelname")
         print("   📺 Channels: https://www.youtube.com/user/username")
-        print("   📺 Channels: https://www.youtube.com/user/username")
 
-        print("-" * 50)
+        print("-" * 60)
 
         user_input = input("Enter YouTube URL(s): ")
 
@@ -774,9 +845,18 @@ if __name__ == "__main__":
 
             if max_resolution:
                 print(f"📺 Selected: Max {max_resolution}p")
+
+            elif resolution_choice in ('', '1'):
+                # Enter or 1 are both the documented default
+                print("📺 Selected: Best available quality")
+
             else:
                 # Yellow text for fallback warning
-                print("\033[93m⚠️  Invalid input. Falling back to: Best available quality\033[0m")
+                print(
+                    f"\033[93m⚠️  Unrecognised choice "
+                    f"'{resolution_choice}'. Falling back to: "
+                    f"Best available quality\033[0m"
+                )
 
         max_workers = 1
 
