@@ -1,6 +1,7 @@
 from yt_dlp import YoutubeDL
 import os
 import re
+import sys
 from typing import Optional, List, Dict, Tuple
 from urllib.parse import urlparse, parse_qs
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -35,18 +36,17 @@ def get_url_info(url: str) -> Tuple[bool, Dict]:
             return is_playlist, info
 
     except Exception:
-        # If extraction fails, fall back to basic URL parsing as last resort
-        # This covers cases where URLs are malformed or network issues occur
+        # fallback: check for 'list' parameter in URL
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
-        is_playlist = 'list' in query_params or '/playlist' in parsed_url.path
+        is_playlist = 'list' in query_params
         return is_playlist, {}
 
 
 def is_playlist_url(url: str) -> bool:
     """
     Check if the provided URL is a playlist or a single video using cached detection.
-    This approach is more robust than URL parsing and adapts to YouTube format changes.
+    Uses yt-dlp's native detection with simple URL parsing fallback.
 
     Args:
         url (str): YouTube URL to check
@@ -287,8 +287,6 @@ def download_youtube_content(urls: List[str], output_path: Optional[str] = None,
 
 
 if __name__ == "__main__":
-    import sys
-
     # Check for command line arguments
     if len(sys.argv) > 1 and sys.argv[1] == '--list-formats':
         url = input("Enter the YouTube URL to list formats: ")
