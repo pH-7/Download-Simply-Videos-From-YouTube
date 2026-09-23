@@ -1,4 +1,4 @@
 # Files & folders to exclude for distribution
-/promo-asssets export-ignore
-.gitattributes export-ignore
-.gitignore export-ignore
+/promo-assets   export-ignore
+.gitattributes  export-ignore
+.gitignore      export-ignore
