@@ -166,24 +166,17 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0, audio_
         }]
         print(f"🎵 [Thread {thread_id}] Audio-only mode: Downloading MP3...")
     else:
-        # Prefer h264/aac (native MP4 codecs) to avoid re-encoding quality loss
         # Use separate video+audio streams for best quality
+        # Note: h264 (avc1) maxes at 1080p on YouTube; VP9/AV1 are used for 1440p/4K
         if max_resolution:
             # User specified a max resolution - strictly enforce it
             format_selector = (
-                f'bestvideo[height<={max_resolution}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/'
-                f'bestvideo[height<={max_resolution}][ext=mp4]+bestaudio[ext=m4a]/'
                 f'bestvideo[height<={max_resolution}]+bestaudio/'
                 f'best[height<={max_resolution}]'
             )
         else:
-            # No limit - get the best available quality
-            format_selector = (
-                'bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/'
-                'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
-                'bestvideo+bestaudio/'
-                'best'
-            )
+            # No limit - get the absolute best available quality
+            format_selector = 'bestvideo+bestaudio/best'
         file_extension = 'mp4'
         # Only remux (no re-encoding) when merging separate streams
         postprocessors = []
