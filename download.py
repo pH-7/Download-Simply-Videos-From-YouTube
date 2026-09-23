@@ -32,6 +32,15 @@ def get_url_info(url: str) -> Tuple[bool, Dict]:
 
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
+
+            # Check if info extraction was successful
+            if info is None:
+                # Fallback to URL parsing if yt-dlp fails
+                parsed_url = urlparse(url)
+                query_params = parse_qs(parsed_url.query)
+                is_playlist = 'list' in query_params
+                return is_playlist, {}
+
             is_playlist = info.get('_type') == 'playlist'
             return is_playlist, info
 
@@ -169,7 +178,15 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
             # Extract fresh info for download (cached info is only for detection)
             info = ydl.extract_info(url, download=False)
 
-            if '_type' in info and info['_type'] == 'playlist':
+            # Check if info extraction was successful
+            if info is None:
+                return {
+                    'url': url,
+                    'success': False,
+                    'message': f"❌ [Thread {thread_id}] Failed to extract video information. Video may be private or unavailable."
+                }
+
+            if info.get('_type') == 'playlist':
                 playlist_title = info.get('title', 'Unknown Playlist')
                 video_count = len(info.get('entries', []))
                 print(
@@ -186,7 +203,7 @@ def download_single_video(url: str, output_path: str, thread_id: int = 0) -> dic
             # Download content
             ydl.download([url])
 
-            if '_type' in info and info['_type'] == 'playlist':
+            if info.get('_type') == 'playlist':
                 return {
                     'url': url,
                     'success': True,
