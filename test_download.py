@@ -11,9 +11,11 @@ import os
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from yt_dlp import YoutubeDL
 
+import download
 from download import (
     download_single_video,
 )
@@ -180,6 +182,55 @@ class TestFormatSelectionWithLimit(unittest.TestCase):
             height, self.max_res,
             msg=f"Video stream height is {height}p — expected at most {self.max_res}p.",
         )
+
+
+# ---------------------------------------------------------------------------
+# Test: ignoreerrors is scoped correctly by content type (no network)
+# ---------------------------------------------------------------------------
+
+class _FakeYoutubeDL:
+    """Records the opts it was constructed with; never touches the network."""
+
+    captured_opts = None
+
+    def __init__(self, opts):
+        _FakeYoutubeDL.captured_opts = opts
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        return False
+
+    def extract_info(self, url, download=True):
+        return {'_type': 'video', 'title': 'Fake Video', 'id': 'abc123'}
+
+
+class TestIgnoreErrorsByContentType(unittest.TestCase):
+    """
+    A single unavailable video must not abort an entire playlist/channel
+    download, but a lone video should still fail loudly. ignoreerrors
+    controls this, and must be set per content type.
+    """
+
+    def _captured_ignoreerrors(self, content_type):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with patch.object(download, 'YoutubeDL', _FakeYoutubeDL), \
+                 patch.object(download, 'get_url_info', return_value=(content_type, {})):
+                download_single_video(
+                    url="https://www.youtube.com/watch?v=abc123",
+                    output_path=tmp_dir,
+                )
+        return _FakeYoutubeDL.captured_opts['ignoreerrors']
+
+    def test_playlist_skips_unavailable_entries(self):
+        self.assertEqual(self._captured_ignoreerrors('playlist'), 'only_download')
+
+    def test_channel_skips_unavailable_entries(self):
+        self.assertEqual(self._captured_ignoreerrors('channel'), 'only_download')
+
+    def test_single_video_fails_loudly(self):
+        self.assertFalse(self._captured_ignoreerrors('video'))
 
 
 # ---------------------------------------------------------------------------
