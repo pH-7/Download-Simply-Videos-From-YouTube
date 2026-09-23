@@ -67,7 +67,7 @@ Click the green **Code** button at the top of this page → **Download ZIP**. Un
 
 ### Step 5 — Set up a sandbox and install libraries
 
-macOS (and modern Linux) no longer allow installing Python packages directly. You will get `externally-managed-environment` error if you try. The fix is a **virtual environment** (a self-contained sandbox just for this project).
+Since Python 3.11, macOS and Linux block global `pip install` ([PEP 668](https://peps.python.org/pep-0668/)) to protect system-managed packages. The solution is to install dependencies inside a **virtual environment**, an isolated sandbox scoped to this project.
 
 Run these three commands in order:
 
