@@ -637,7 +637,22 @@ def download_youtube_content(
 
         for future in as_completed(future_to_url):
 
-            result = future.result()
+            url = future_to_url[future]
+
+            try:
+                result = future.result()
+
+            except Exception as error:
+                # One URL failing unexpectedly must not discard the
+                # results of every other URL in the batch.
+                result = {
+                    'url': url,
+                    'success': False,
+                    'count': 0,
+                    'message': (
+                        f"❌ Unexpected error: {error}"
+                    )
+                }
 
             results.append(result)
 
@@ -912,21 +927,10 @@ if __name__ == "__main__":
             f"{output_dir if output_dir else './downloads'}"
         )
 
-        if output_dir:
-
-            download_youtube_content(
-                urls,
-                output_dir,
-                max_workers=max_workers,
-                audio_only=audio_only,
-                max_resolution=max_resolution
-            )
-
-        else:
-
-            download_youtube_content(
-                urls,
-                max_workers=max_workers,
-                audio_only=audio_only,
-                max_resolution=max_resolution
-            )
+        download_youtube_content(
+            urls,
+            output_dir or None,
+            max_workers=max_workers,
+            audio_only=audio_only,
+            max_resolution=max_resolution
+        )
