@@ -7,6 +7,9 @@
 > [!Note]
 > Download any YouTube video, playlist, or entire channel just by pasting a URL. Videos are saved in high quality — no account needed.
 
+> [!Important]
+> Minimum Python version: **3.10+**. Older versions can be stuck on outdated `yt-dlp` builds and may fail with YouTube `403` errors.
+
 | | |
 |---|---|
 | 🎥 | Download any YouTube video as **MP4** |
@@ -32,9 +35,9 @@
 
 > New here? Follow these steps and you'll be downloading videos in a few minutes.
 
-### Step 1 — Install Python
+### Step 1 — Install Python (3.10+ required)
 
-[Download Python 3.10 or newer](https://www.python.org/downloads/) and install it.
+[Download Python 3.10 or newer](https://www.python.org/downloads/) and install it. Python 3.13 is recommended for best compatibility with the latest `yt-dlp` releases.
 
 > **Windows users:** during installation, tick the **"Add Python to PATH"** checkbox at the bottom of the first screen — easy to miss!
 
@@ -211,6 +214,8 @@ This only deletes incomplete files (`.part`, `.ytdl`, temp fragments) — your f
 
 If you're comfortable with the command line or want to contribute to the project:
 
+> Requirement: use **Python 3.10+** before creating the virtual environment.
+
 1. **Clone the repository**
 
    ```bash
@@ -267,7 +272,7 @@ You can edit `download.py` to change:
 
 [![Pierre-Henry Soria](https://s.gravatar.com/avatar/a210fe61253c43c869d71eaed0e90149?s=200)](https://PH7.me 'Pierre-Henry Soria personal website')
 
-**[Pierre-Henry Soria](https://ph7.me)** — software AI engineer, passionate about automation, content creation, and building tools that save time.
+**[Pierre-Henry Soria](https://ph7.me)** — sr software AI engineer, extremely passionate about everything related to automation, content creation, and building simple yet efficient tools that save time 🚀
 
 ☕️ **[Buy me a coffee](https://ko-fi.com/phenry)** if this saved you some time!
 
