@@ -1,6 +1,6 @@
 # 📥 Download Any Videos From YouTube
 
-**High-Quality YouTube Video & Playlist Downloader 🎥**
+**⚡️ High-Quality YouTube Video & Playlist Downloader 🎥**
 
 ![Demo. Download any YouTube videos and YouTube playlists](promo-assets/demo-download-youtube-videos-script.gif)
 
@@ -134,7 +134,7 @@ Number of concurrent downloads (1-5, default=3): 5
 - ✨ Support for single videos, playlists, and **multiple URLs simultaneously**
 - 🎥 High-quality video and audio downloads (up to 1080p)
 - 📁 Organized folder structure
-- ⚡ **Smart concurrent downloading** for batch operations (only when needed)
+- ⚡ **Unlimited concurrent downloading**, ideal for super-fast batch video downloads
 - 🔄 Format conversion to MP4
 - 🛡️ Error handling and recovery with detailed reporting
 - 📊 Download progress tracking and summary reports
