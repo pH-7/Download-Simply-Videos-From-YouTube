@@ -1,5 +1,6 @@
 import sys
 from yt_dlp import YoutubeDL
+from yt_dlp.postprocessor import PostProcessor
 import os
 import re
 import time
@@ -7,6 +8,16 @@ from typing import Optional, List, Dict, Tuple
 from urllib.parse import urlparse, parse_qs
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
+
+# ext4 and most Linux filesystems cap a single filename at 255 bytes.
+MAX_FILENAME_BYTES = 255
+
+# While downloading, yt-dlp appends a per-stream suffix to the base name:
+# ".f<format_id>.<ext>.part", plus "-Frag<n>" for fragmented streams.
+# Titles are trimmed before format selection runs, so the format id and
+# extension are not yet known -- reserve room for the longest such suffix
+# instead of guessing them.
+FILENAME_SUFFIX_RESERVE = 32
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
@@ -147,6 +158,99 @@ def count_archived_entries(url: str, ydl: YoutubeDL) -> int:
         1 for entry in entries
         if entry and ydl.in_download_archive(entry)
     )
+
+
+def truncate_to_bytes(text: str, max_bytes: int) -> str:
+    """
+    Shorten text to at most max_bytes UTF-8 bytes without splitting a
+    multi-byte character.
+
+    Args:
+        text (str): Text to shorten
+        max_bytes (int): Maximum length in bytes
+
+    Returns:
+        str: The shortened text
+    """
+
+    if max_bytes <= 0:
+        return ''
+
+    encoded = text.encode('utf-8')
+
+    if len(encoded) <= max_bytes:
+        return text
+
+    return encoded[:max_bytes].decode('utf-8', errors='ignore').rstrip()
+
+
+class FilenameLengthLimiter(PostProcessor):
+    """
+    Shorten over-long titles before download so the resulting filename
+    fits within MAX_FILENAME_BYTES.
+
+    Asks yt-dlp what it would name the file rather than re-deriving the
+    output template, so the templates in download_single_video remain the
+    single source of truth for naming.
+    """
+
+    def __init__(self, thread_id: int = 0):
+        super().__init__(None)
+        self._thread_id = thread_id
+
+    def _base_bytes(self, info: Dict) -> int:
+        """Byte length of the planned filename, excluding its extension."""
+
+        planned = self._downloader.prepare_filename(info)
+        base = os.path.splitext(os.path.basename(planned))[0]
+
+        return len(base.encode('utf-8'))
+
+    def run(self, info: Dict) -> Tuple[List[str], Dict]:
+
+        original = info.get('title')
+
+        if not original:
+            return [], info
+
+        budget = MAX_FILENAME_BYTES - FILENAME_SUFFIX_RESERVE
+
+        # Sanitising a title can change its byte length, so converge
+        # instead of trusting a single calculation.
+        for _ in range(5):
+
+            over = self._base_bytes(info) - budget
+
+            if over <= 0:
+                break
+
+            current = info['title']
+
+            shortened = truncate_to_bytes(
+                current,
+                len(current.encode('utf-8')) - over
+            )
+
+            if not shortened:
+                # The prefix and id alone fill the budget
+                info['title'] = str(info.get('id', 'video'))
+                break
+
+            if shortened == current:
+                break
+
+            info['title'] = shortened
+
+        if info['title'] == original:
+            return [], info
+
+        print(
+            f"✂️  [Thread {self._thread_id}] "
+            f"Title too long for a {MAX_FILENAME_BYTES}-byte filename, "
+            f"shortened to: {info['title']}"
+        )
+
+        return [], info
 
 
 def parse_multiple_urls(input_string: str) -> List[str]:
@@ -373,6 +477,11 @@ def download_single_video(
 
         try:
             with YoutubeDL(downloader_options) as ydl:
+
+                ydl.add_post_processor(
+                    FilenameLengthLimiter(thread_id=thread_id),
+                    when='pre_process'
+                )
 
                 # yt-dlp returns None when it recognizes a single video in
                 # the download archive. Treat that as an intentional skip,
