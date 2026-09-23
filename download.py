@@ -435,8 +435,8 @@ def download_single_video(
                             # Every remaining entry, if any, was
                             # unavailable rather than downloadable.
                             unavailable_note = (
-                                f" ({len(entries)} unavailable)"
-                                if entries
+                                f" ({skipped_count} unavailable)"
+                                if skipped_count
                                 else ""
                             )
 
