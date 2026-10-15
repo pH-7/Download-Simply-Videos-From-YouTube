@@ -85,6 +85,11 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+The requirements install `yt-dlp` from its upstream GitHub branch, including
+its default dependencies and YouTube challenge-solver scripts. This keeps the
+downloader current with YouTube changes that may land before the next PyPI
+release; rerun the install command to update it.
+
 > **Windows:** use `venv\Scripts\activate` instead of `source venv/bin/activate`.
 
 You'll see `(venv)` appear at the start of your prompt — that means the sandbox is active. That's it — you're ready!

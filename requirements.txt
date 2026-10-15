@@ -1,7 +1,6 @@
-yt-dlp>=2026.8.19
+# PyPI's latest release predates recent YouTube player-client fixes.
+# Track upstream and install its EJS challenge scripts with the default extra.
+yt-dlp[default] @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.zip
 ffmpeg-python>=0.2.0
 
-# Keep yt-dlp current. Older builds pick YouTube player clients whose
-# format URLs now return HTTP 403, so downloads fail outright rather
-# than degrading -- 2026.06.09 and 2026.07.04 are both affected.
-# Python 3.10+ is required for these releases.
+# Python 3.10+ is required by current yt-dlp releases.
