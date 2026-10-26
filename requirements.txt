@@ -1,6 +1,6 @@
-# PyPI's latest release predates recent YouTube player-client fixes.
-# Track upstream and install its EJS challenge scripts with the default extra.
-yt-dlp[default] @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.zip
-ffmpeg-python>=0.2.0
+# Install reviewed releases from PyPI instead of a moving GitHub branch.
+# Update versions deliberately after checking release notes and dependencies.
+yt-dlp[default]==2026.10.21
+ffmpeg-python==0.2.0
 
 # Python 3.10+ is required by current yt-dlp releases.
