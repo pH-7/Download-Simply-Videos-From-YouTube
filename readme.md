@@ -85,10 +85,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-The requirements install `yt-dlp` from its upstream GitHub branch, including
-its default dependencies and YouTube challenge-solver scripts. This keeps the
-downloader current with YouTube changes that may land before the next PyPI
-release; rerun the install command to update it.
+The requirements install a pinned, reviewed `yt-dlp` release from PyPI,
+including its default dependencies for YouTube challenge solving. This avoids
+silently installing new code from a moving upstream branch. If YouTube changes
+break downloads, review the latest `yt-dlp` release and deliberately update the
+version in `requirements.txt` before reinstalling. The pinned version does not
+automatically update when you rerun `pip install -r requirements.txt`.
 
 > **Windows:** use `venv\Scripts\activate` instead of `source venv/bin/activate`.
 
