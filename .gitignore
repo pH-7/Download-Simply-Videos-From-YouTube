@@ -8,6 +8,9 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.egg-info/
+build/
+dist/
 
 # Virtual environment
 venv/

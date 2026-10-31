@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "download-simply-videos-from-youtube"
+version = "3.2.0"
+description = "Download YouTube videos, playlists, channels, or audio in high quality."
+readme = { file = "readme.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["license.md"]
+authors = [
+    { name = "Pierre-Henry Soria" },
+]
+keywords = [
+    "audio",
+    "downloader",
+    "playlist",
+    "video",
+    "youtube",
+    "yt-dlp",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Video",
+]
+dependencies = [
+    "yt-dlp[default]==2026.10.26",
+]
+
+[project.scripts]
+download-youtube-videos = "download:main"
+
+[project.urls]
+Homepage = "https://github.com/pH-7/Download-Simply-Videos-From-YouTube"
+Issues = "https://github.com/pH-7/Download-Simply-Videos-From-YouTube/issues"
+Source = "https://github.com/pH-7/Download-Simply-Videos-From-YouTube"
+
+[tool.setuptools]
+py-modules = ["download"]

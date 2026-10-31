@@ -880,7 +880,8 @@ def download_youtube_content(
         print("\n✅ No new downloads needed; all items were already downloaded.")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Run the interactive command-line downloader."""
 
     if (
         len(sys.argv) > 1 and
@@ -1090,3 +1091,7 @@ if __name__ == "__main__":
             audio_only=audio_only,
             max_resolution=max_resolution
         )
+
+
+if __name__ == "__main__":
+    main()

@@ -8,7 +8,7 @@
 > Download any YouTube video, playlist, or entire channel just by pasting a URL. Videos are saved in high quality — no account needed.
 
 > [!Important]
-> Minimum Python version: **3.10+**. Older versions can be stuck on outdated `yt-dlp` builds and may fail with YouTube `403` errors.
+> Minimum Python version: **3.11+**. Older versions cannot install current `yt-dlp` releases and may fail when YouTube changes its player.
 
 | | |
 |---|---|
@@ -35,9 +35,24 @@
 
 > New here? Follow these steps and you'll be downloading videos in a few minutes.
 
-### Step 1 — Install Python (3.10+ required)
+### Install from PyPI
 
-[Download Python 3.10 or newer](https://www.python.org/downloads/) and install it. Python 3.13 is recommended for best compatibility with the latest `yt-dlp` releases.
+After installing FFmpeg, Deno, and Python 3.11 or newer as described below, run:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+python -m pip install download-simply-videos-from-youtube
+download-youtube-videos
+```
+
+> **Windows:** use `venv\Scripts\activate` instead of `source venv/bin/activate`.
+
+### Install from source
+
+### Step 1 — Install Python (3.11+ required)
+
+[Download Python 3.11 or newer](https://www.python.org/downloads/) and install it. Python 3.15 is recommended for best compatibility with current packaging tools and `yt-dlp` releases.
 
 > **Windows users:** during installation, tick the **"Add Python to PATH"** checkbox at the bottom of the first screen — easy to miss!
 
@@ -85,12 +100,10 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-The requirements install a pinned, reviewed `yt-dlp` release from PyPI,
-including its default dependencies for YouTube challenge solving. This avoids
-silently installing new code from a moving upstream branch. If YouTube changes
-break downloads, review the latest `yt-dlp` release and deliberately update the
-version in `requirements.txt` before reinstalling. The pinned version does not
-automatically update when you rerun `pip install -r requirements.txt`.
+The requirements install this project in editable mode together with its
+declared, reviewed `yt-dlp` release and YouTube challenge solvers. The exact
+dependency version lives in `pyproject.toml`, avoiding a second source of truth.
+Review and update that pin deliberately when YouTube changes require it.
 
 > **Windows:** use `venv\Scripts\activate` instead of `source venv/bin/activate`.
 
@@ -226,7 +239,7 @@ This only deletes incomplete files (`.part`, `.ytdl`, temp fragments) — your f
 
 If you're comfortable with the command line or want to contribute to the project:
 
-> Requirement: use **Python 3.10+** before creating the virtual environment.
+> Requirement: use **Python 3.11+** before creating the virtual environment.
 
 1. **Clone the repository**
 
@@ -265,6 +278,8 @@ To see all quality options for a specific video before downloading:
 python download.py --list-formats
 ```
 
+PyPI installations can use `download-youtube-videos --list-formats` instead.
+
 ### Control how many downloads run at the same time
 
 The script supports simultaneous downloads. When downloading multiple videos, you'll be asked how many to run in parallel (1–5, default is 3). More = faster, but uses more bandwidth.
@@ -276,7 +291,7 @@ Number of concurrent downloads (1-5, default=3): 5
 ### Customise the script
 
 You can edit `download.py` to change:
-- Maximum video resolution (currently capped at 1080p)
+- Maximum video resolution
 - Default output folder
 - Number of retry attempts for failed downloads
 

@@ -1,6 +1,2 @@
-# Install reviewed releases from PyPI instead of a moving GitHub branch.
-# Update versions deliberately after checking release notes and dependencies.
-yt-dlp[default]==2026.10.21
-ffmpeg-python==0.2.0
-
-# Python 3.10+ is required by current yt-dlp releases.
+# Install the project and its reviewed dependencies from pyproject.toml.
+-e .
