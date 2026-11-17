@@ -297,13 +297,17 @@ You can edit `download.py` to change:
 
 ## 👨‍🍳 Who made this?
 
-[![Pierre-Henry Soria](https://s.gravatar.com/avatar/a210fe61253c43c869d71eaed0e90149?s=200)](https://PH7.me 'Pierre-Henry Soria personal website')
 
-**[Pierre-Henry Soria](https://ph7.me)** — sr software AI engineer, extremely passionate about everything related to automation, content creation, and building simple yet efficient tools that save time 🚀
+[![Pierre-Henry Soria](https://s.gravatar.com/avatar/a210fe61253c43c869d71eaed0e90149?s=200)](https://ph7.me "Pierre-Henry Soria's personal website")
 
-☕️ **[Buy me a coffee](https://ko-fi.com/phenry)** if this saved you some time!
+**[Pierre-Henry Soria](https://pierrehenry.be)**, Senior Software & AI Engineer, passionate about automation, content creation, and building simple, efficient tools that save time. 🚀
 
-[![@phenrysay][x-icon]](https://x.com/phenrysay "Follow Me on X") [![pH-7][github-icon]](https://github.com/pH-7 "Follow Me on GitHub") [![YouTube Tech Videos][youtube-icon]](https://www.youtube.com/@pH7Programming "My YouTube Tech Channel") [![BlueSky][bsky-icon]](https://bsky.app/profile/ph7.me "Follow Me on BlueSky")
+☕️ **[Buy me a coffee](https://ko-fi.com/phenry)** to support the ongoing maintenance and development of this project.
+
+[![@phenrysay][x-icon]](https://x.com/phenrysay "Follow me on X")
+[![pH-7][github-icon]](https://github.com/pH-7 "Follow me on GitHub")
+[![YouTube Tech Videos][youtube-icon]](https://www.youtube.com/@pH7Programming "My YouTube tech channel")
+[![Bluesky][bsky-icon]](https://bsky.app/profile/ph7.me "Follow me on Bluesky")
 
 ## 🤝 Contributing
 
@@ -319,6 +323,6 @@ This script is for educational purposes only. Before using this script, please *
 
 <!-- GitHub's Markdown reference links -->
 [x-icon]: https://img.shields.io/badge/x-000000?style=for-the-badge&logo=x
-[bsky-icon]: https://img.shields.io/badge/BlueSky-00A8E8?style=for-the-badge&logo=bluesky&logoColor=white
+[bsky-icon]: https://img.shields.io/badge/BlueSky-000000?style=for-the-badge&logo=bluesky&logoColor=white
 [github-icon]: https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white
 [youtube-icon]: https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white
