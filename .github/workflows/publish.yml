@@ -3,6 +3,12 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing published GitHub release tag (e.g. v3.2.0)'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -10,11 +16,25 @@ permissions:
 jobs:
   build:
     name: Build and validate distributions
+    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
     steps:
+      - name: Verify the manually selected release is published
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          published_tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName,isDraft --jq 'select(.isDraft == false) | .tagName' -- "$RELEASE_TAG")
+          test "$published_tag" = "$RELEASE_TAG"
+
       - name: Check out the release
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'release' && github.sha || format('refs/tags/{0}', inputs.release_tag) }}
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -23,14 +43,18 @@ jobs:
           cache: pip
 
       - name: Verify the tag matches the package version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: >-
-          python -c "import os, pathlib, tomllib;
-          version = tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'];
-          expected = f'v{version}';
-          actual = os.environ['RELEASE_TAG'];
-          raise SystemExit(f'Release tag {actual!r} must equal {expected!r}') if actual != expected else None"
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import tomllib
+
+          version = tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version']
+          expected = f'v{version}'
+          actual = os.environ['RELEASE_TAG']
+          if actual != expected:
+              raise SystemExit(f'Release tag {actual!r} must equal {expected!r}')
+          PY
 
       - name: Install build tooling
         run: python -m pip install --upgrade build twine
